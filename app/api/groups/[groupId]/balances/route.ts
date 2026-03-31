@@ -23,8 +23,9 @@ export async function GET(req: NextRequest, { params }: Params) {
   if (mErr) return NextResponse.json({ error: mErr.message }, { status: 500 })
 
   const memberMap: Record<string, User> = {}
-  for (const row of memberRows) {
-    if (row.users) memberMap[(row.users as User).id] = row.users as User
+  for (const row of memberRows ?? []) {
+    const user = row.users as unknown as User | null
+    if (user?.id) memberMap[user.id] = user
   }
 
   // Fetch expenses with splits
@@ -43,9 +44,20 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 })
 
+  type ExpenseRow = {
+    paid_by: string
+    expense_splits: { user_id: string; amount: number }[]
+  }
+
+  type SettlementRow = {
+    from_user_id: string
+    to_user_id: string
+    amount: number
+  }
+
   const balances = computeBalances(
-    expenses as Parameters<typeof computeBalances>[0],
-    settlements as Parameters<typeof computeBalances>[1],
+    (expenses ?? []) as unknown as ExpenseRow[],
+    (settlements ?? []) as unknown as SettlementRow[],
     memberMap
   )
 
