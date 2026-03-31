@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent iOS tap highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Disable overscroll / bounce in LINE mini app */
+html,
+body {
+  overscroll-behavior: none;
+  height: 100%;
+}
+
+/* Safe area for notched phones */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
