@@ -22,10 +22,17 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   if (mErr) return NextResponse.json({ error: mErr.message }, { status: 500 })
 
+  // Build userId → User map.
+  // The Supabase JS client types nested selects as arrays for non-unique FKs,
+  // but at runtime group_members.user_id always resolves to a single user.
   const memberMap: Record<string, User> = {}
   for (const row of memberRows ?? []) {
-    const user = row.users as unknown as User | null
-    if (user?.id) memberMap[user.id] = user
+    const rawUsers = row.users
+    // Handle both array (Supabase type inference) and object (runtime value)
+    const userRecord = Array.isArray(rawUsers) ? rawUsers[0] : rawUsers
+    if (userRecord && 'id' in userRecord) {
+      memberMap[userRecord.id] = userRecord as User
+    }
   }
 
   // Fetch expenses with splits
@@ -36,7 +43,7 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   if (eErr) return NextResponse.json({ error: eErr.message }, { status: 500 })
 
-  // Fetch settlements (past recorded transfers)
+  // Fetch recorded settlements
   const { data: settlements, error: sErr } = await supabase
     .from('settlements')
     .select('from_user_id, to_user_id, amount')
@@ -44,20 +51,9 @@ export async function GET(req: NextRequest, { params }: Params) {
 
   if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 })
 
-  type ExpenseRow = {
-    paid_by: string
-    expense_splits: { user_id: string; amount: number }[]
-  }
-
-  type SettlementRow = {
-    from_user_id: string
-    to_user_id: string
-    amount: number
-  }
-
   const balances = computeBalances(
-    (expenses ?? []) as unknown as ExpenseRow[],
-    (settlements ?? []) as unknown as SettlementRow[],
+    (expenses ?? []) as Parameters<typeof computeBalances>[0],
+    (settlements ?? []) as Parameters<typeof computeBalances>[1],
     memberMap
   )
 
