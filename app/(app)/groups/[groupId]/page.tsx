@@ -291,6 +291,7 @@ export default function GroupDetailPage() {
                 key={expense.id}
                 expense={expense}
                 currentUserId={user?.id ?? ''}
+                groupId={groupId}
               />
             ))
           )

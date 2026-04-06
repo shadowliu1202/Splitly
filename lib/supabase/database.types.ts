@@ -51,8 +51,10 @@ export type Database = {
           created_at: string | null
           description: string
           group_id: string
+          happened_at: string
           id: string
           paid_by: string
+          photo_url: string | null
           split_type: string
         }
         Insert: {
@@ -60,8 +62,10 @@ export type Database = {
           created_at?: string | null
           description: string
           group_id: string
+          happened_at?: string
           id?: string
           paid_by: string
+          photo_url?: string | null
           split_type?: string
         }
         Update: {
@@ -69,8 +73,10 @@ export type Database = {
           created_at?: string | null
           description?: string
           group_id?: string
+          happened_at?: string
           id?: string
           paid_by?: string
+          photo_url?: string | null
           split_type?: string
         }
         Relationships: [
