@@ -7,6 +7,7 @@ export interface User {
   line_user_id: string
   display_name: string
   avatar_url: string | null
+  is_virtual: boolean
   created_at: string | null
 }
 

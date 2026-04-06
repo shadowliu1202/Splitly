@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Share2 } from 'lucide-react'
+import { Plus, Share2, UserPlus } from 'lucide-react'
 import Link from 'next/link'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
@@ -10,6 +10,7 @@ import { Group, Expense, UserBalance, Transfer } from '@/types'
 import Header from '@/components/layout/Header'
 import ExpenseCard from '@/components/expenses/ExpenseCard'
 import SettlementCard from '@/components/settlements/SettlementCard'
+import AddVirtualMemberForm from '@/components/groups/AddVirtualMemberForm'
 import Avatar from '@/components/ui/Avatar'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { buildShareText } from '@/lib/liff/client'
@@ -27,6 +28,7 @@ export default function GroupDetailPage() {
   const [transfers, setTransfers] = useState<Transfer[]>([])
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
   const [loading, setLoading] = useState(true)
+  const [showAddVirtual, setShowAddVirtual] = useState(false)
 
   const fetchAll = useCallback(async () => {
     if (!user) return
@@ -57,14 +59,11 @@ export default function GroupDetailPage() {
     }
   }, [groupId, user])
 
-  useEffect(() => {
-    fetchAll()
-  }, [fetchAll])
+  useEffect(() => { fetchAll() }, [fetchAll])
 
   const handleShare = async () => {
     if (!group) return
     const text = buildShareText(group.name, group.invite_code)
-
     if (liff?.isApiAvailable('shareTargetPicker')) {
       await liff.shareTargetPicker([{ type: 'text', text }])
     } else {
@@ -81,6 +80,9 @@ export default function GroupDetailPage() {
     )
   }
 
+  const members = group.group_members ?? []
+  const realMembers = members.filter((m) => !m.users?.is_virtual)
+  const virtualMembers = members.filter((m) => m.users?.is_virtual)
   const myBalance = balances.find((b) => b.userId === user?.id)
 
   return (
@@ -89,29 +91,65 @@ export default function GroupDetailPage() {
         title={group.name}
         showBack
         rightAction={
-          <button
-            onClick={handleShare}
-            className="p-2 rounded-full active:bg-gray-100"
-          >
+          <button onClick={handleShare} className="p-2 rounded-full active:bg-gray-100">
             <Share2 size={20} className="text-gray-600" />
           </button>
         }
       />
 
       {/* Members strip */}
-      <div className="bg-white px-4 py-3 flex items-center gap-2 border-b border-gray-100 overflow-x-auto">
-        {group.group_members?.map((m) => (
-          <div key={m.user_id} className="flex flex-col items-center gap-1 flex-shrink-0">
-            <Avatar
-              src={m.users?.avatar_url}
-              name={m.users?.display_name ?? '?'}
-              size={36}
-            />
-            <span className="text-[10px] text-gray-500 max-w-[48px] truncate">
-              {m.users?.display_name}
-            </span>
-          </div>
-        ))}
+      <div className="bg-white px-4 py-3 border-b border-gray-100 space-y-3">
+        {/* Real members */}
+        <div className="flex items-center gap-3 overflow-x-auto">
+          {realMembers.map((m) => (
+            <div key={m.user_id} className="flex flex-col items-center gap-1 flex-shrink-0">
+              <Avatar
+                src={m.users?.avatar_url}
+                name={m.users?.display_name ?? '?'}
+                size={36}
+              />
+              <span className="text-[10px] text-gray-500 max-w-[48px] truncate">
+                {m.users?.display_name}
+              </span>
+            </div>
+          ))}
+
+          {/* Virtual members */}
+          {virtualMembers.map((m) => (
+            <div key={m.user_id} className="flex flex-col items-center gap-1 flex-shrink-0">
+              <div className="w-9 h-9 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
+                <span className="text-sm">👤</span>
+              </div>
+              <span className="text-[10px] text-gray-400 max-w-[48px] truncate">
+                {m.users?.display_name}
+              </span>
+            </div>
+          ))}
+
+          {/* Add virtual member button */}
+          <button
+            onClick={() => setShowAddVirtual(true)}
+            className="flex flex-col items-center gap-1 flex-shrink-0"
+          >
+            <div className="w-9 h-9 rounded-full bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center">
+              <UserPlus size={14} className="text-gray-400" />
+            </div>
+            <span className="text-[10px] text-gray-400">新增</span>
+          </button>
+        </div>
+
+        {/* Add virtual member form */}
+        {showAddVirtual && (
+          <AddVirtualMemberForm
+            groupId={groupId}
+            currentUserId={user?.id ?? ''}
+            onAdded={() => {
+              setShowAddVirtual(false)
+              fetchAll()
+            }}
+            onCancel={() => setShowAddVirtual(false)}
+          />
+        )}
       </div>
 
       {/* My balance summary */}
@@ -207,7 +245,6 @@ export default function GroupDetailPage() {
         <Link
           href={`/groups/${groupId}/expenses/new`}
           className="fixed bottom-6 right-6 w-14 h-14 bg-line-green text-white rounded-full flex items-center justify-center shadow-lg active:scale-95 transition-transform"
-          aria-label="新增支出"
         >
           <Plus size={24} />
         </Link>

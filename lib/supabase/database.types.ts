@@ -213,6 +213,7 @@ export type Database = {
           created_at: string | null
           display_name: string
           id: string
+          is_virtual: boolean
           line_user_id: string
         }
         Insert: {
@@ -220,6 +221,7 @@ export type Database = {
           created_at?: string | null
           display_name: string
           id?: string
+          is_virtual?: boolean
           line_user_id: string
         }
         Update: {
@@ -227,6 +229,7 @@ export type Database = {
           created_at?: string | null
           display_name?: string
           id?: string
+          is_virtual?: boolean
           line_user_id?: string
         }
         Relationships: []
