@@ -22,6 +22,44 @@ export async function GET(req: NextRequest, { params }: Params) {
   return NextResponse.json({ group })
 }
 
+// PATCH /api/groups/[groupId] – rename group (any member)
+export async function PATCH(req: NextRequest, { params }: Params) {
+  const userId = req.headers.get('x-user-id')
+  if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const { groupId } = await params
+  const { name } = await req.json()
+
+  if (!name?.trim()) {
+    return NextResponse.json({ error: 'name is required' }, { status: 400 })
+  }
+
+  const supabase = adminClient()
+
+  // Verify requester is a member
+  const { data: membership } = await supabase
+    .from('group_members')
+    .select('user_id')
+    .eq('group_id', groupId)
+    .eq('user_id', userId)
+    .maybeSingle()
+
+  if (!membership) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { data: group, error } = await supabase
+    .from('groups')
+    .update({ name: name.trim() })
+    .eq('id', groupId)
+    .select()
+    .single()
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ group })
+}
+
 // DELETE /api/groups/[groupId] – delete group (creator only)
 export async function DELETE(req: NextRequest, { params }: Params) {
   const userId = req.headers.get('x-user-id')

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
-import { Plus, Share2, UserPlus } from 'lucide-react'
+import { Plus, Share2, UserPlus, Pencil, Check, X } from 'lucide-react'
 import Link from 'next/link'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
@@ -29,6 +29,9 @@ export default function GroupDetailPage() {
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
   const [loading, setLoading] = useState(true)
   const [showAddVirtual, setShowAddVirtual] = useState(false)
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  const [savingName, setSavingName] = useState(false)
 
   const fetchAll = useCallback(async () => {
     if (!user) return
@@ -61,6 +64,28 @@ export default function GroupDetailPage() {
 
   useEffect(() => { fetchAll() }, [fetchAll])
 
+  const handleRename = async () => {
+    if (!user || !nameInput.trim() || nameInput.trim() === group?.name) {
+      setEditingName(false)
+      return
+    }
+    setSavingName(true)
+    try {
+      const res = await fetch(`/api/groups/${groupId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+        body: JSON.stringify({ name: nameInput.trim() }),
+      })
+      if (res.ok) {
+        const { group: updated } = await res.json()
+        setGroup((prev) => prev ? { ...prev, name: updated.name } : prev)
+      }
+    } finally {
+      setSavingName(false)
+      setEditingName(false)
+    }
+  }
+
   const handleShare = async () => {
     if (!group) return
     const text = buildShareText(group.name, group.invite_code)
@@ -87,15 +112,61 @@ export default function GroupDetailPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header
-        title={group.name}
-        showBack
-        rightAction={
-          <button onClick={handleShare} className="p-2 rounded-full active:bg-gray-100">
-            <Share2 size={20} className="text-gray-600" />
+      {/* Header with inline rename */}
+      <header className="sticky top-0 z-30 bg-white border-b border-gray-100 flex items-center h-14 px-2">
+        <button
+          onClick={() => window.history.back()}
+          className="p-2 rounded-full active:bg-gray-100 flex-shrink-0"
+        >
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-700"><path d="m15 18-6-6 6-6"/></svg>
+        </button>
+
+        {editingName ? (
+          <div className="flex-1 flex items-center gap-1 px-1">
+            <input
+              autoFocus
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleRename()
+                if (e.key === 'Escape') setEditingName(false)
+              }}
+              className="flex-1 text-sm font-semibold border-b-2 border-line-green outline-none bg-transparent px-1 py-0.5"
+              maxLength={50}
+            />
+            <button
+              onClick={handleRename}
+              disabled={savingName}
+              className="p-1.5 text-line-green active:opacity-70"
+            >
+              <Check size={18} />
+            </button>
+            <button
+              onClick={() => setEditingName(false)}
+              className="p-1.5 text-gray-400 active:opacity-70"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        ) : (
+          <button
+            className="flex-1 flex items-center justify-center gap-1.5 px-2 group"
+            onClick={() => { setNameInput(group.name); setEditingName(true) }}
+          >
+            <span className="text-base font-semibold text-gray-900 truncate">
+              {group.name}
+            </span>
+            <Pencil size={13} className="text-gray-400 flex-shrink-0 opacity-0 group-active:opacity-100" />
           </button>
-        }
-      />
+        )}
+
+        <button
+          onClick={handleShare}
+          className="p-2 rounded-full active:bg-gray-100 flex-shrink-0"
+        >
+          <Share2 size={20} className="text-gray-600" />
+        </button>
+      </header>
 
       {/* Members strip */}
       <div className="bg-white px-4 py-3 border-b border-gray-100 space-y-3">
