@@ -6,9 +6,10 @@ import { Plus, Share2, UserPlus, Pencil, Check, X, Scale, BarChart2 } from 'luci
 import Link from 'next/link'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
-import { Group, Expense } from '@/types'
+import { Group, Expense, Settlement } from '@/types'
 import { formatDateLabel, groupByDate } from '@/lib/utils/date'
 import ExpenseCard from '@/components/expenses/ExpenseCard'
+import TransferCard from '@/components/expenses/TransferCard'
 import AddVirtualMemberForm from '@/components/groups/AddVirtualMemberForm'
 import Avatar from '@/components/ui/Avatar'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -22,6 +23,7 @@ export default function GroupDetailPage() {
 
   const [group, setGroup] = useState<Group | null>(null)
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [settlements, setSettlements] = useState<Settlement[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddVirtual, setShowAddVirtual] = useState(false)
   const [editingName, setEditingName] = useState(false)
@@ -32,16 +34,19 @@ export default function GroupDetailPage() {
     if (!user) return
     const headers = { 'x-user-id': user.id }
     try {
-      const [groupRes, expensesRes] = await Promise.all([
+      const [groupRes, expensesRes, settlementsRes] = await Promise.all([
         fetch(`/api/groups/${groupId}`, { headers }),
         fetch(`/api/groups/${groupId}/expenses`, { headers }),
+        fetch(`/api/groups/${groupId}/settlements`, { headers }),
       ])
-      const [{ group }, { expenses }] = await Promise.all([
+      const [{ group }, { expenses }, { settlements }] = await Promise.all([
         groupRes.json(),
         expensesRes.json(),
+        settlementsRes.json(),
       ])
       setGroup(group)
       setExpenses(expenses ?? [])
+      setSettlements(settlements ?? [])
     } catch (err) {
       console.error(err)
     } finally {
@@ -197,32 +202,49 @@ export default function GroupDetailPage() {
           </button>
         </div>
 
-        {/* Expenses grouped by date */}
-        {expenses.length === 0 ? (
+        {/* Activity list — expenses + transfers grouped by date */}
+        {expenses.length === 0 && settlements.length === 0 ? (
           <div className="text-center py-16 space-y-2 text-gray-400">
             <p className="text-4xl">🧾</p>
             <p>還沒有支出記錄</p>
             <p className="text-sm">點擊右下角新增支出</p>
           </div>
-        ) : (
-          groupByDate(expenses, (e) => e.happened_at).map(([date, group]) => (
+        ) : (() => {
+          type Item =
+            | { kind: 'expense'; date: string; item: Expense }
+            | { kind: 'transfer'; date: string; item: Settlement }
+
+          const items: Item[] = [
+            ...expenses.map((e) => ({ kind: 'expense' as const, date: e.happened_at, item: e })),
+            ...settlements.map((s) => ({ kind: 'transfer' as const, date: s.settled_at, item: s })),
+          ]
+
+          return groupByDate(items, (i) => i.date).map(([date, group]) => (
             <div key={date}>
               <p className="text-xs font-semibold text-gray-400 mb-2 px-1">
                 {formatDateLabel(date)}
               </p>
               <div className="space-y-3">
-                {group.map((expense) => (
-                  <ExpenseCard
-                    key={expense.id}
-                    expense={expense}
-                    currentUserId={user?.id ?? ''}
-                    groupId={groupId}
-                  />
-                ))}
+                {group.map((i) =>
+                  i.kind === 'expense' ? (
+                    <ExpenseCard
+                      key={i.item.id}
+                      expense={i.item}
+                      currentUserId={user?.id ?? ''}
+                      groupId={groupId}
+                    />
+                  ) : (
+                    <TransferCard
+                      key={i.item.id}
+                      settlement={i.item}
+                      currentUserId={user?.id ?? ''}
+                    />
+                  )
+                )}
               </div>
             </div>
           ))
-        )}
+        })()}
       </div>
 
       {/* FAB */}
