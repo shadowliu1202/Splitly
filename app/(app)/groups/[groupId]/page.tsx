@@ -225,7 +225,7 @@ export default function GroupDetailPage() {
                 {formatDateLabel(date)}
               </p>
               <div className="rounded-2xl overflow-hidden divide-y divide-gray-100">
-                {group.map((i) =>
+                {[...group].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'transfer' ? -1 : 1)).map((i) =>
                   i.kind === 'expense' ? (
                     <ExpenseCard
                       key={i.item.id}
