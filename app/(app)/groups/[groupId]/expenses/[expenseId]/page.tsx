@@ -43,6 +43,7 @@ export default function ExpenseDetailPage() {
   const [paidBy, setPaidBy] = useState('')
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [happenedAt, setHappenedAt] = useState('')
+  const [remark, setRemark] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -74,6 +75,7 @@ export default function ExpenseDetailPage() {
     setPaidBy(expense.paid_by)
     setSplitType(expense.split_type as SplitType)
     setHappenedAt(toLocalInputDatetime(expense.happened_at))
+    setRemark(expense.remark ?? '')
     setPhotoUrl(expense.photo_url)
     setPhotoPreview(expense.photo_url)
 
@@ -158,6 +160,7 @@ export default function ExpenseDetailPage() {
           splitType,
           happenedAt: new Date(happenedAt).toISOString(),
           photoUrl,
+          remark: remark.trim() || null,
           splits: splitData,
         }),
       })
@@ -306,6 +309,18 @@ export default function ExpenseDetailPage() {
               )}
             </div>
 
+            {/* Remark */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">備註（選填）</label>
+              <textarea
+                value={remark}
+                onChange={(e) => setRemark(e.target.value)}
+                placeholder="例：AA制、不含酒水..."
+                rows={2}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:border-line-green resize-none"
+              />
+            </div>
+
             {/* Paid by — dropdown */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">誰付錢</label>
@@ -420,6 +435,13 @@ export default function ExpenseDetailPage() {
                   {expense.split_type === 'equal' ? '均分' : '自訂金額'}
                 </span>
               </div>
+
+              {expense.remark && (
+                <div className="border-t border-gray-100 pt-3 text-sm text-gray-500">
+                  <span>📝 備註</span>
+                  <p className="mt-1 text-gray-700">{expense.remark}</p>
+                </div>
+              )}
             </div>
 
             {/* Splits card */}

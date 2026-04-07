@@ -36,6 +36,7 @@ export default function AddExpenseForm({
   const [paidBy, setPaidBy] = useState(currentUserId)
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [happenedAt, setHappenedAt] = useState(toLocalInputDatetime())
+  const [remark, setRemark] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -122,6 +123,7 @@ export default function AddExpenseForm({
           splitType,
           happenedAt: new Date(happenedAt).toISOString(),
           photoUrl,
+          remark: remark.trim() || null,
           splits: splitData,
         }),
       })
@@ -219,6 +221,18 @@ export default function AddExpenseForm({
             <span className="text-sm">拍照或選擇圖片</span>
           </button>
         )}
+      </div>
+
+      {/* Remark */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">備註（選填）</label>
+        <textarea
+          value={remark}
+          onChange={(e) => setRemark(e.target.value)}
+          placeholder="例：AA制、不含酒水..."
+          rows={2}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:border-line-green resize-none"
+        />
       </div>
 
       {/* Paid by — dropdown */}

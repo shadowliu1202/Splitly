@@ -38,6 +38,7 @@ export interface Expense {
   split_type: SplitType
   happened_at: string   // DATE as YYYY-MM-DD
   photo_url: string | null
+  remark: string | null
   created_at: string
   // joined via query
   payer?: User
@@ -89,6 +90,7 @@ export interface CreateExpensePayload {
   splitType: SplitType
   happenedAt: string  // YYYY-MM-DD
   photoUrl?: string | null
+  remark?: string | null
   splits: { userId: string; amount: number }[]
 }
 
@@ -99,6 +101,7 @@ export interface UpdateExpensePayload {
   splitType?: SplitType
   happenedAt?: string
   photoUrl?: string | null
+  remark?: string | null
   splits?: { userId: string; amount: number }[]
 }
 
