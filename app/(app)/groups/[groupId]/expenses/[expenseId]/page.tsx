@@ -339,16 +339,20 @@ export default function ExpenseDetailPage() {
                     <input type="checkbox" checked={split.included}
                       onChange={() => setSplits((prev) => {
                         const next = prev.map((s) =>
-                          s.userId === split.userId ? { ...s, included: !s.included } : s
+                          s.userId === split.userId
+                            ? { ...s, included: !s.included, customAmount: s.included ? '' : s.customAmount }
+                            : s
                         )
                         if (splitType !== 'custom' || totalAmount <= 0) return next
-                        const included = next.filter((s) => s.included)
-                        const per = included.length > 0
-                          ? Math.round(totalAmount / included.length)
-                          : 0
+                        const setTotal = next
+                          .filter((s) => s.included && s.customAmount !== '')
+                          .reduce((sum, s) => sum + (parseFloat(s.customAmount) || 0), 0)
+                        const unset = next.filter((s) => s.included && s.customAmount === '')
+                        if (unset.length === 0) return next
+                        const per = Math.round((totalAmount - setTotal) / unset.length)
                         return next.map((s) => ({
                           ...s,
-                          customAmount: s.included ? String(per) : '',
+                          customAmount: s.included && s.customAmount === '' ? String(per) : s.customAmount,
                         }))
                       })}
                       className="accent-line-green w-4 h-4" />

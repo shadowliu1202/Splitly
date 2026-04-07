@@ -280,17 +280,23 @@ export default function AddExpenseForm({
                 checked={split.included}
                 onChange={() =>
                   setSplits((prev) => {
+                    // toggle inclusion; clear amount when unchecking
                     const next = prev.map((s) =>
-                      s.userId === split.userId ? { ...s, included: !s.included } : s
+                      s.userId === split.userId
+                        ? { ...s, included: !s.included, customAmount: s.included ? '' : s.customAmount }
+                        : s
                     )
                     if (splitType !== 'custom' || totalAmount <= 0) return next
-                    const included = next.filter((s) => s.included)
-                    const per = included.length > 0
-                      ? Math.round(totalAmount / included.length)
-                      : 0
+                    // distribute only among members whose amount is still empty
+                    const setTotal = next
+                      .filter((s) => s.included && s.customAmount !== '')
+                      .reduce((sum, s) => sum + (parseFloat(s.customAmount) || 0), 0)
+                    const unset = next.filter((s) => s.included && s.customAmount === '')
+                    if (unset.length === 0) return next
+                    const per = Math.round((totalAmount - setTotal) / unset.length)
                     return next.map((s) => ({
                       ...s,
-                      customAmount: s.included ? String(per) : '',
+                      customAmount: s.included && s.customAmount === '' ? String(per) : s.customAmount,
                     }))
                   })
                 }
