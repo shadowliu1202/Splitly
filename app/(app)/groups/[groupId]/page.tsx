@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Plus, Share2, UserPlus, Pencil, Check, X, ChevronRight } from 'lucide-react'
+import { Plus, Share2, UserPlus, Pencil, Check, X, Scale } from 'lucide-react'
 import Link from 'next/link'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
-import { Group, Expense, UserBalance } from '@/types'
+import { Group, Expense } from '@/types'
 import ExpenseCard from '@/components/expenses/ExpenseCard'
 import AddVirtualMemberForm from '@/components/groups/AddVirtualMemberForm'
 import Avatar from '@/components/ui/Avatar'
@@ -21,7 +21,6 @@ export default function GroupDetailPage() {
 
   const [group, setGroup] = useState<Group | null>(null)
   const [expenses, setExpenses] = useState<Expense[]>([])
-  const [myBalance, setMyBalance] = useState<UserBalance | null>(null)
   const [loading, setLoading] = useState(true)
   const [showAddVirtual, setShowAddVirtual] = useState(false)
   const [editingName, setEditingName] = useState(false)
@@ -31,24 +30,17 @@ export default function GroupDetailPage() {
   const fetchAll = useCallback(async () => {
     if (!user) return
     const headers = { 'x-user-id': user.id }
-
     try {
-      const [groupRes, expensesRes, balancesRes] = await Promise.all([
+      const [groupRes, expensesRes] = await Promise.all([
         fetch(`/api/groups/${groupId}`, { headers }),
         fetch(`/api/groups/${groupId}/expenses`, { headers }),
-        fetch(`/api/groups/${groupId}/balances`, { headers }),
       ])
-
-      const [{ group }, { expenses }, { balances }] = await Promise.all([
+      const [{ group }, { expenses }] = await Promise.all([
         groupRes.json(),
         expensesRes.json(),
-        balancesRes.json(),
       ])
-
       setGroup(group)
       setExpenses(expenses ?? [])
-      const mine = (balances ?? []).find((b: UserBalance) => b.userId === user.id) ?? null
-      setMyBalance(mine)
     } catch (err) {
       console.error(err)
     } finally {
@@ -158,7 +150,6 @@ export default function GroupDetailPage() {
               <span className="text-[10px] text-gray-500 max-w-[48px] truncate">{m.users?.display_name}</span>
             </div>
           ))}
-
           {virtualMembers.map((m) => (
             <div key={m.user_id} className="flex flex-col items-center gap-1 flex-shrink-0">
               <div className="w-9 h-9 rounded-full bg-gray-100 border-2 border-dashed border-gray-300 flex items-center justify-center">
@@ -167,7 +158,6 @@ export default function GroupDetailPage() {
               <span className="text-[10px] text-gray-400 max-w-[48px] truncate">{m.users?.display_name}</span>
             </div>
           ))}
-
           <button onClick={() => setShowAddVirtual(true)} className="flex flex-col items-center gap-1 flex-shrink-0">
             <div className="w-9 h-9 rounded-full bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center">
               <UserPlus size={14} className="text-gray-400" />
@@ -186,60 +176,18 @@ export default function GroupDetailPage() {
         )}
       </div>
 
-      {/* My balance summary — tappable shortcut to balance page */}
-      {myBalance && (
-        <button
-          onClick={() => router.push(`/groups/${groupId}/balances`)}
-          className={`mx-4 mt-4 w-[calc(100%-2rem)] rounded-2xl p-4 text-left flex items-center gap-3 ${
-            myBalance.amount > 0
-              ? 'bg-green-50 border border-green-200'
-              : myBalance.amount < 0
-              ? 'bg-red-50 border border-red-200'
-              : 'bg-gray-50 border border-gray-200'
-          }`}
-        >
-          <div className="flex-1">
-            <p className="text-xs text-gray-500 mb-0.5">我的餘額</p>
-            <p
-              className={`text-2xl font-bold ${
-                myBalance.amount > 0 ? 'text-line-green' : myBalance.amount < 0 ? 'text-red-500' : 'text-gray-400'
-              }`}
-            >
-              {myBalance.amount > 0
-                ? `+$${myBalance.amount.toLocaleString()}`
-                : myBalance.amount < 0
-                ? `-$${Math.abs(myBalance.amount).toLocaleString()}`
-                : '已結清 🎉'}
-            </p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              {myBalance.amount > 0 ? '別人欠你的' : myBalance.amount < 0 ? '你欠別人的' : ''}
-            </p>
-          </div>
-          <ChevronRight size={18} className="text-gray-400 flex-shrink-0" />
-        </button>
-      )}
-
-      {/* Tabs */}
-      <div className="flex bg-white border-b border-gray-100 mt-4">
-        {/* Expenses tab — shows inline list */}
-        <button
-          className="flex-1 py-3 text-sm font-medium text-line-green border-b-2 border-line-green"
-        >
-          支出 ({expenses.length})
-        </button>
-
-        {/* Balances tab — navigates to balance page */}
-        <button
-          onClick={() => router.push(`/groups/${groupId}/balances`)}
-          className="flex-1 py-3 text-sm font-medium text-gray-400 flex items-center justify-center gap-1"
-        >
-          結算
-          <ChevronRight size={14} className="text-gray-300" />
-        </button>
-      </div>
-
-      {/* Expenses list */}
+      {/* Expense list with balance button above */}
       <div className="p-4 pb-28 space-y-3">
+        {/* Balance action button */}
+        <button
+          onClick={() => router.push(`/groups/${groupId}/balances`)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-line-green text-line-green text-sm font-medium bg-white active:bg-green-50 transition-colors"
+        >
+          <Scale size={16} />
+          查看結算
+        </button>
+
+        {/* Expenses */}
         {expenses.length === 0 ? (
           <div className="text-center py-16 space-y-2 text-gray-400">
             <p className="text-4xl">🧾</p>
