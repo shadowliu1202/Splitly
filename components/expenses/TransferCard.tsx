@@ -10,7 +10,7 @@ export default function TransferCard({ settlement }: Props) {
   const { from_user, to_user, amount } = settlement
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-green-50 rounded-2xl">
+    <div className="flex items-center gap-3 px-4 py-3 bg-green-50">
       <Avatar src={from_user?.avatar_url} name={from_user?.display_name ?? '?'} size={40} />
       <p className="text-sm text-gray-700 flex-1 min-w-0">
         <span className="font-semibold">{from_user?.display_name ?? '?'}</span>

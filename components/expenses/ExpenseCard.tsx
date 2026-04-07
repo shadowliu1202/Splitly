@@ -16,7 +16,7 @@ export default function ExpenseCard({ expense, currentUserId, groupId }: Props) 
 
   return (
     <Link href={`/groups/${groupId}/expenses/${expense.id}`}>
-      <div className="flex items-center gap-3 px-4 py-3 bg-white rounded-2xl active:bg-gray-50">
+      <div className="flex items-center gap-3 px-4 py-3 bg-white active:bg-gray-50">
         {/* Icon */}
         <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center flex-shrink-0">
           <ShoppingBag size={18} className="text-white" />

@@ -224,7 +224,7 @@ export default function GroupDetailPage() {
               <p className="text-xs font-semibold text-gray-400 mb-2 px-1">
                 {formatDateLabel(date)}
               </p>
-              <div className="space-y-3">
+              <div className="rounded-2xl overflow-hidden divide-y divide-gray-100">
                 {group.map((i) =>
                   i.kind === 'expense' ? (
                     <ExpenseCard
