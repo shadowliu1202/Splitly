@@ -238,6 +238,7 @@ export default function GroupDetailPage() {
                       key={i.item.id}
                       settlement={i.item}
                       currentUserId={user?.id ?? ''}
+                      groupId={groupId}
                     />
                   )
                 )}

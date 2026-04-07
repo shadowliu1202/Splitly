@@ -1,16 +1,19 @@
+import Link from 'next/link'
 import { Settlement } from '@/types'
 import Avatar from '@/components/ui/Avatar'
 
 interface Props {
   settlement: Settlement
   currentUserId: string
+  groupId: string
 }
 
-export default function TransferCard({ settlement }: Props) {
+export default function TransferCard({ settlement, groupId }: Props) {
   const { from_user, to_user, amount } = settlement
 
   return (
-    <div className="flex items-center gap-3 px-4 py-3 bg-green-50">
+    <Link href={`/groups/${groupId}/settlements/${settlement.id}`}>
+    <div className="flex items-center gap-3 px-4 py-3 bg-green-50 active:bg-green-100">
       <Avatar src={from_user?.avatar_url} name={from_user?.display_name ?? '?'} size={40} />
       <p className="text-sm text-gray-700 flex-1 min-w-0">
         <span className="font-semibold">{from_user?.display_name ?? '?'}</span>
@@ -19,5 +22,6 @@ export default function TransferCard({ settlement }: Props) {
         <span className="text-gray-500"> ${Number(amount).toLocaleString()}</span>
       </p>
     </div>
+    </Link>
   )
 }
