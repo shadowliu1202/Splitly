@@ -43,12 +43,7 @@ export function formatDateLabel(dateKey: string): string {
   const [y, m, d] = dateKey.split('-').map(Number)
   const date = new Date(y, m - 1, d)
   const now = new Date()
-  const todayStr = localDateStr(now)
-  const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1)
-  const yestStr = localDateStr(yesterday)
 
-  if (dateKey === todayStr) return '今天'
-  if (dateKey === yestStr) return '昨天'
   if (date.getFullYear() === now.getFullYear()) return `${m}月${d}日`
   return `${y}年${m}月${d}日`
 }

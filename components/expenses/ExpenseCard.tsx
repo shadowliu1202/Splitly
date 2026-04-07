@@ -52,22 +52,7 @@ export default function ExpenseCard({ expense, currentUserId, groupId }: Props) 
               </div>
             </div>
 
-            {/* Split breakdown */}
-            {expense.expense_splits && expense.expense_splits.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {expense.expense_splits.map((split) => (
-                  <span
-                    key={split.user_id}
-                    className="text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5"
-                  >
-                    {split.users?.display_name ?? split.user_id.slice(0, 6)} $
-                    {Number(split.amount).toLocaleString()}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <p className="text-xs text-gray-300 mt-1.5">{dateLabel}</p>
+<p className="text-xs text-gray-300 mt-1.5">{dateLabel}</p>
           </div>
         </div>
       </Card>
