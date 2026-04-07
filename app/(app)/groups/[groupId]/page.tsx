@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
-import { Plus, Share2, UserPlus, Pencil, Check, X, Scale } from 'lucide-react'
+import { Plus, Share2, UserPlus, Pencil, Check, X, Scale, BarChart2 } from 'lucide-react'
 import Link from 'next/link'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
@@ -178,14 +178,23 @@ export default function GroupDetailPage() {
 
       {/* Expense list with balance button above */}
       <div className="p-4 pb-28 space-y-3">
-        {/* Balance action button */}
-        <button
-          onClick={() => router.push(`/groups/${groupId}/balances`)}
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-line-green text-line-green text-sm font-medium bg-white active:bg-green-50 transition-colors"
-        >
-          <Scale size={16} />
-          查看結算
-        </button>
+        {/* Action buttons row */}
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            onClick={() => router.push(`/groups/${groupId}/balances`)}
+            className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-line-green text-line-green text-sm font-medium bg-white active:bg-green-50 transition-colors"
+          >
+            <Scale size={16} />
+            查看結算
+          </button>
+          <button
+            onClick={() => router.push(`/groups/${groupId}/stats`)}
+            className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-gray-200 text-gray-600 text-sm font-medium bg-white active:bg-gray-50 transition-colors"
+          >
+            <BarChart2 size={16} />
+            消費統計
+          </button>
+        </div>
 
         {/* Expenses */}
         {expenses.length === 0 ? (
