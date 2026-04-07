@@ -265,14 +265,6 @@ export default function SettlementDetailPage() {
           </div>
         ) : (
           <>
-            {/* Photo */}
-            {settlement.photo_url && (
-              <div className="w-full aspect-video rounded-2xl overflow-hidden bg-gray-100">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={settlement.photo_url} alt="receipt" className="w-full h-full object-cover" />
-              </div>
-            )}
-
             {/* Main info card */}
             <div className="bg-white rounded-2xl p-4 space-y-3 shadow-sm">
               <div className="flex items-center gap-3">
@@ -303,6 +295,14 @@ export default function SettlementDetailPage() {
                 </div>
               )}
             </div>
+
+            {/* Photo — below detail card */}
+            {settlement.photo_url && (
+              <div className="w-full aspect-video rounded-2xl overflow-hidden bg-gray-100">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={settlement.photo_url} alt="receipt" className="w-full h-full object-cover" />
+              </div>
+            )}
           </>
         )}
       </div>
