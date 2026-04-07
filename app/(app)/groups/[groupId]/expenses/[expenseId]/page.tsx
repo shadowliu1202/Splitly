@@ -306,36 +306,33 @@ export default function ExpenseDetailPage() {
               )}
             </div>
 
-            {/* Paid by */}
+            {/* Paid by — dropdown */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">誰付錢</label>
-              <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">誰付錢</label>
+              <select
+                value={paidBy}
+                onChange={(e) => setPaidBy(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:border-line-green"
+              >
                 {members.map((m) => (
-                  <label key={m.id} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer">
-                    <input type="radio" name="paidBy" value={m.id} checked={paidBy === m.id} onChange={() => setPaidBy(m.id)} className="accent-line-green" />
-                    <Avatar src={m.avatar_url} name={m.display_name} size={32} />
-                    <span className="text-sm flex-1">{m.display_name}</span>
-                  </label>
+                  <option key={m.id} value={m.id}>{m.display_name}</option>
                 ))}
-              </div>
+              </select>
             </div>
 
-            {/* Split type */}
+            {/* Splits — with inline split-type dropdown in the header */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">分帳方式</label>
-              <div className="flex gap-2">
-                {([{ value: 'equal', label: '均分' }, { value: 'custom', label: '自訂金額' }] as const).map((opt) => (
-                  <button key={opt.value} type="button" onClick={() => setSplitType(opt.value)}
-                    className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${splitType === opt.value ? 'bg-line-green text-white border-line-green' : 'bg-white text-gray-600 border-gray-200'}`}>
-                    {opt.label}
-                  </button>
-                ))}
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium text-gray-700">分帳給</label>
+                <select
+                  value={splitType}
+                  onChange={(e) => setSplitType(e.target.value as SplitType)}
+                  className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-700 bg-white focus:outline-none focus:border-line-green"
+                >
+                  <option value="equal">均分</option>
+                  <option value="custom">自訂金額</option>
+                </select>
               </div>
-            </div>
-
-            {/* Splits */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">分帳給</label>
               <div className="space-y-2">
                 {splits.map((split) => (
                   <div key={split.userId} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200">
