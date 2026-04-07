@@ -62,7 +62,6 @@ export default function AddExpenseForm({
     const file = e.target.files?.[0]
     if (!file) return
 
-    // Local preview
     setPhotoPreview(URL.createObjectURL(file))
     setUploadingPhoto(true)
     try {
@@ -222,56 +221,33 @@ export default function AddExpenseForm({
         )}
       </div>
 
-      {/* Paid by */}
+      {/* Paid by — dropdown */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">誰付錢</label>
-        <div className="space-y-2">
-          {members.map((member) => (
-            <label
-              key={member.id}
-              className="flex items-center gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer active:bg-gray-50"
-            >
-              <input
-                type="radio"
-                name="paidBy"
-                value={member.id}
-                checked={paidBy === member.id}
-                onChange={() => setPaidBy(member.id)}
-                className="accent-line-green"
-              />
-              <Avatar src={member.avatar_url} name={member.display_name} size={32} />
-              <span className="text-sm flex-1">{member.display_name}</span>
-            </label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">誰付錢</label>
+        <select
+          value={paidBy}
+          onChange={(e) => setPaidBy(e.target.value)}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:border-line-green"
+        >
+          {members.map((m) => (
+            <option key={m.id} value={m.id}>{m.display_name}</option>
           ))}
-        </div>
+        </select>
       </div>
 
-      {/* Split type */}
+      {/* Splits — with inline split-type dropdown in the header */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">分帳方式</label>
-        <div className="flex gap-2">
-          {([{ value: 'equal', label: '均分' }, { value: 'custom', label: '自訂金額' }] as const).map(
-            (opt) => (
-              <button
-                key={opt.value}
-                type="button"
-                onClick={() => setSplitType(opt.value)}
-                className={`flex-1 py-2 rounded-xl text-sm font-medium border transition-colors ${
-                  splitType === opt.value
-                    ? 'bg-line-green text-white border-line-green'
-                    : 'bg-white text-gray-600 border-gray-200'
-                }`}
-              >
-                {opt.label}
-              </button>
-            )
-          )}
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-medium text-gray-700">分帳給</label>
+          <select
+            value={splitType}
+            onChange={(e) => setSplitType(e.target.value as SplitType)}
+            className="border border-gray-200 rounded-lg px-2 py-1 text-xs text-gray-700 bg-white focus:outline-none focus:border-line-green"
+          >
+            <option value="equal">均分</option>
+            <option value="custom">自訂金額</option>
+          </select>
         </div>
-      </div>
-
-      {/* Split among */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">分帳給</label>
         <div className="space-y-2">
           {splits.map((split) => (
             <div key={split.userId} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200">
@@ -280,14 +256,12 @@ export default function AddExpenseForm({
                 checked={split.included}
                 onChange={() =>
                   setSplits((prev) => {
-                    // toggle inclusion; clear amount when unchecking
                     const next = prev.map((s) =>
                       s.userId === split.userId
                         ? { ...s, included: !s.included, customAmount: s.included ? '' : s.customAmount }
                         : s
                     )
                     if (splitType !== 'custom' || totalAmount <= 0) return next
-                    // distribute only among members whose amount is still empty
                     const setTotal = next
                       .filter((s) => s.included && s.customAmount !== '')
                       .reduce((sum, s) => sum + (parseFloat(s.customAmount) || 0), 0)
