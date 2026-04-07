@@ -49,10 +49,16 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         const liffModule = await import('@line/liff')
         const liffInstance = liffModule.default
 
-        await liffInstance.init({
-          liffId: process.env.NEXT_PUBLIC_LIFF_ID!,
-          withLoginOnExternalBrowser: true,
-        })
+        const initTimeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('LIFF init timeout (15s)')), 15000)
+        )
+        await Promise.race([
+          liffInstance.init({
+            liffId: process.env.NEXT_PUBLIC_LIFF_ID!,
+            withLoginOnExternalBrowser: true,
+          }),
+          initTimeout,
+        ])
 
         setLiff(liffInstance)
 

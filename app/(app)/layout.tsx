@@ -6,7 +6,7 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isReady, isLoggedIn } = useLiff()
-  const { isLoading, error } = useUser()
+  const { user, isLoading, error } = useUser()
 
   // LIFF initialising
   if (!isReady) {
@@ -42,17 +42,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Auth error
-  if (error) {
+  // Auth error or user failed to sync
+  if (error || (!isLoading && !user)) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center space-y-3">
           <p className="text-4xl">⚠️</p>
           <p className="text-lg font-semibold">登入發生錯誤</p>
-          <p className="text-sm text-gray-400">{error.message}</p>
+          <p className="text-sm text-gray-400">
+            {error?.message ?? '無法驗證 LINE 身份，請重新開啟'}
+          </p>
           <button
             onClick={() => window.location.reload()}
-            className="mt-2 text-sm text-line-green underline"
+            className="mt-2 px-4 py-2 rounded-xl bg-line-green text-white text-sm font-medium active:opacity-80"
           >
             重新整理
           </button>
