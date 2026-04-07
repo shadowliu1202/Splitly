@@ -59,6 +59,8 @@ export interface Settlement {
   to_user_id: string
   amount: number
   settled_at: string
+  remark: string | null
+  photo_url: string | null
   created_at: string
   from_user?: User
   to_user?: User
