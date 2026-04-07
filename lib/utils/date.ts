@@ -1,29 +1,66 @@
+const pad = (n: number) => String(n).padStart(2, '0')
+
+/** Returns local YYYY-MM-DD from a Date object. */
+function localDateStr(d: Date) {
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
 /**
- * Format a YYYY-MM-DD string as a human-readable date label.
+ * Extracts local YYYY-MM-DD from an ISO timestamp for date grouping.
+ */
+export function toLocalDateKey(iso: string): string {
+  return localDateStr(new Date(iso))
+}
+
+/**
+ * Returns a value string for a datetime-local input (YYYY-MM-DDTHH:MM) in local time.
+ * Pass an ISO string to convert an existing value, or omit for "now".
+ */
+export function toLocalInputDatetime(iso?: string): string {
+  const d = iso ? new Date(iso) : new Date()
+  return `${localDateStr(d)}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/**
+ * Formats an ISO timestamp as a localized date + time string.
+ * e.g. "2025/4/7 下午02:30"
+ */
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString('zh-TW', {
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+/**
+ * Format a YYYY-MM-DD date key as a human-readable label.
  * Today → "今天", Yesterday → "昨天", same year → "M月D日", else → "YYYY年M月D日"
  */
-export function formatDateLabel(iso: string): string {
-  const [y, m, d] = iso.split('-').map(Number)
+export function formatDateLabel(dateKey: string): string {
+  const [y, m, d] = dateKey.split('-').map(Number)
   const date = new Date(y, m - 1, d)
   const now = new Date()
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  const todayStr = localDateStr(now)
   const yesterday = new Date(now); yesterday.setDate(now.getDate() - 1)
-  const yestStr = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`
+  const yestStr = localDateStr(yesterday)
 
-  if (iso === todayStr) return '今天'
-  if (iso === yestStr) return '昨天'
+  if (dateKey === todayStr) return '今天'
+  if (dateKey === yestStr) return '昨天'
   if (date.getFullYear() === now.getFullYear()) return `${m}月${d}日`
   return `${y}年${m}月${d}日`
 }
 
 /**
- * Groups an array of items by a YYYY-MM-DD key, returning ordered [dateKey, items[]] pairs
+ * Groups an array of items by local date, returning [YYYY-MM-DD, items[]] pairs
  * sorted by date descending.
  */
 export function groupByDate<T>(items: T[], getDate: (item: T) => string): [string, T[]][] {
   const map: Record<string, T[]> = {}
   for (const item of items) {
-    const key = getDate(item)
+    const key = toLocalDateKey(getDate(item))
     if (!map[key]) map[key] = []
     map[key].push(item)
   }

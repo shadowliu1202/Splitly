@@ -5,22 +5,11 @@ import { useParams, useRouter } from 'next/navigation'
 import { Camera, Check, Pencil, Trash2, X } from 'lucide-react'
 import { useUser } from '@/components/providers/UserProvider'
 import { Expense, SplitType, User } from '@/types'
+import { formatDateTime, toLocalInputDatetime } from '@/lib/utils/date'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
-
-// ── helpers ──────────────────────────────────────────────────────────────────
-
-function fmtDate(iso: string) {
-  // iso is YYYY-MM-DD; parse as local date to avoid UTC offset shift
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('zh-TW', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-}
 
 // ── types ─────────────────────────────────────────────────────────────────────
 
@@ -59,8 +48,6 @@ export default function ExpenseDetailPage() {
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [splits, setSplits] = useState<SplitRow[]>([])
 
-  const today = new Date().toISOString().slice(0, 10)
-
   const fetchData = useCallback(async () => {
     if (!user) return
     const headers = { 'x-user-id': user.id }
@@ -86,7 +73,7 @@ export default function ExpenseDetailPage() {
     setAmount(String(expense.amount))
     setPaidBy(expense.paid_by)
     setSplitType(expense.split_type as SplitType)
-    setHappenedAt(expense.happened_at)
+    setHappenedAt(toLocalInputDatetime(expense.happened_at))
     setPhotoUrl(expense.photo_url)
     setPhotoPreview(expense.photo_url)
 
@@ -169,7 +156,7 @@ export default function ExpenseDetailPage() {
           amount: totalAmount,
           paidBy,
           splitType,
-          happenedAt,
+          happenedAt: new Date(happenedAt).toISOString(),
           photoUrl,
           splits: splitData,
         }),
@@ -280,10 +267,10 @@ export default function ExpenseDetailPage() {
               </div>
             </div>
 
-            {/* Date */}
+            {/* Date & time */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">日期</label>
-              <Input type="date" value={happenedAt} onChange={(e) => setHappenedAt(e.target.value)} max={today} />
+              <label className="block text-sm font-medium text-gray-700 mb-1">日期與時間</label>
+              <Input type="datetime-local" value={happenedAt} onChange={(e) => setHappenedAt(e.target.value)} />
             </div>
 
             {/* Photo */}
@@ -410,7 +397,7 @@ export default function ExpenseDetailPage() {
 
               <div className="border-t border-gray-100 pt-3 flex items-center justify-between text-sm text-gray-500">
                 <span>📅 日期</span>
-                <span className="font-medium text-gray-700">{fmtDate(expense.happened_at)}</span>
+                <span className="font-medium text-gray-700">{formatDateTime(expense.happened_at)}</span>
               </div>
 
               <div className="flex items-center justify-between text-sm text-gray-500">

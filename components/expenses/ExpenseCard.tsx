@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Expense } from '@/types'
+import { formatDateTime } from '@/lib/utils/date'
 import Avatar from '@/components/ui/Avatar'
 import Card from '@/components/ui/Card'
 
@@ -14,14 +15,7 @@ export default function ExpenseCard({ expense, currentUserId, groupId }: Props) 
   const myShare = expense.expense_splits?.find((s) => s.user_id === currentUserId)
   const iAmPayer = expense.paid_by === currentUserId
 
-  // Format date as M/D
-  const dateLabel = (() => {
-    const [y, m, d] = expense.happened_at.split('-').map(Number)
-    return new Date(y, m - 1, d).toLocaleDateString('zh-TW', {
-      month: 'numeric',
-      day: 'numeric',
-    })
-  })()
+  const dateLabel = formatDateTime(expense.happened_at)
 
   return (
     <Link href={`/groups/${groupId}/expenses/${expense.id}`}>

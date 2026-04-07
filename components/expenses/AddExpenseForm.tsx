@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Camera, X } from 'lucide-react'
 import { User, SplitType } from '@/types'
+import { toLocalInputDatetime } from '@/lib/utils/date'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Avatar from '@/components/ui/Avatar'
@@ -30,13 +31,11 @@ export default function AddExpenseForm({
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
 
-  const today = new Date().toISOString().slice(0, 10)
-
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [paidBy, setPaidBy] = useState(currentUserId)
   const [splitType, setSplitType] = useState<SplitType>('equal')
-  const [happenedAt, setHappenedAt] = useState(today)
+  const [happenedAt, setHappenedAt] = useState(toLocalInputDatetime())
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -122,7 +121,7 @@ export default function AddExpenseForm({
           amount: totalAmount,
           paidBy,
           splitType,
-          happenedAt,
+          happenedAt: new Date(happenedAt).toISOString(),
           photoUrl,
           splits: splitData,
         }),
@@ -173,14 +172,13 @@ export default function AddExpenseForm({
         </div>
       </div>
 
-      {/* Date */}
+      {/* Date & time */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">日期</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">日期與時間</label>
         <Input
-          type="date"
+          type="datetime-local"
           value={happenedAt}
           onChange={(e) => setHappenedAt(e.target.value)}
-          max={today}
         />
       </div>
 
