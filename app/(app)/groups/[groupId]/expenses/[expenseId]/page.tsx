@@ -337,7 +337,20 @@ export default function ExpenseDetailPage() {
                 {splits.map((split) => (
                   <div key={split.userId} className="flex items-center gap-3 p-3 rounded-xl border border-gray-200">
                     <input type="checkbox" checked={split.included}
-                      onChange={() => setSplits((prev) => prev.map((s) => s.userId === split.userId ? { ...s, included: !s.included } : s))}
+                      onChange={() => setSplits((prev) => {
+                        const next = prev.map((s) =>
+                          s.userId === split.userId ? { ...s, included: !s.included } : s
+                        )
+                        if (splitType !== 'custom' || totalAmount <= 0) return next
+                        const included = next.filter((s) => s.included)
+                        const per = included.length > 0
+                          ? Math.round(totalAmount / included.length)
+                          : 0
+                        return next.map((s) => ({
+                          ...s,
+                          customAmount: s.included ? String(per) : '',
+                        }))
+                      })}
                       className="accent-line-green w-4 h-4" />
                     <Avatar src={split.avatarUrl} name={split.displayName} size={32} />
                     <span className="text-sm flex-1 truncate">{split.displayName}</span>

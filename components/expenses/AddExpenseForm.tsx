@@ -279,9 +279,20 @@ export default function AddExpenseForm({
                 type="checkbox"
                 checked={split.included}
                 onChange={() =>
-                  setSplits((prev) =>
-                    prev.map((s) => s.userId === split.userId ? { ...s, included: !s.included } : s)
-                  )
+                  setSplits((prev) => {
+                    const next = prev.map((s) =>
+                      s.userId === split.userId ? { ...s, included: !s.included } : s
+                    )
+                    if (splitType !== 'custom' || totalAmount <= 0) return next
+                    const included = next.filter((s) => s.included)
+                    const per = included.length > 0
+                      ? Math.round(totalAmount / included.length)
+                      : 0
+                    return next.map((s) => ({
+                      ...s,
+                      customAmount: s.included ? String(per) : '',
+                    }))
+                  })
                 }
                 className="accent-line-green w-4 h-4"
               />
