@@ -30,14 +30,9 @@ export default function ExpenseCard({ expense, currentUserId, groupId }: Props) 
         </div>
 
         {myShare && (
-          <div className="text-right flex-shrink-0">
-            <p className={cn('text-xs mb-0.5', iAmPayer ? 'text-gray-400' : 'text-gray-400')}>
-              {iAmPayer ? '你付了' : '你欠'}
-            </p>
-            <p className={cn('text-sm font-semibold', iAmPayer ? 'text-line-green' : 'text-red-500')}>
-              ${Number(myShare.amount).toLocaleString()}
-            </p>
-          </div>
+          <p className={cn('text-sm font-semibold flex-shrink-0', iAmPayer ? 'text-line-green' : 'text-red-500')}>
+            ${Number(myShare.amount).toLocaleString()}
+          </p>
         )}
       </div>
     </Link>
