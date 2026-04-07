@@ -4,13 +4,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import { useUser } from '@/components/providers/UserProvider'
 import { Expense } from '@/types'
+import { formatDateLabel, groupByDate } from '@/lib/utils/date'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import Header from '@/components/layout/Header'
-
-function fmtDate(iso: string) {
-  const [y, m, d] = iso.split('-').map(Number)
-  return new Date(y, m - 1, d).toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })
-}
 
 export default function StatsPage() {
   const { groupId } = useParams<{ groupId: string }>()
@@ -107,22 +103,26 @@ export default function StatsPage() {
               </div>
             )}
 
-            {/* Spend list */}
-            <div>
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2 px-1">消費明細</p>
-              <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-50 overflow-hidden">
-                {stats.myItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3 px-4 py-3">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{item.description}</p>
-                      <p className="text-xs text-gray-400">{fmtDate(item.happenedAt)}</p>
-                    </div>
-                    <p className="text-sm font-semibold text-gray-800 flex-shrink-0">
-                      ${item.myAmount.toLocaleString()}
-                    </p>
+            {/* Spend list grouped by date */}
+            <div className="space-y-4">
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1">消費明細</p>
+              {groupByDate(stats.myItems, (i) => i.happenedAt).map(([date, group]) => (
+                <div key={date}>
+                  <p className="text-xs font-semibold text-gray-400 mb-2 px-1">
+                    {formatDateLabel(date)}
+                  </p>
+                  <div className="bg-white rounded-2xl shadow-sm divide-y divide-gray-50 overflow-hidden">
+                    {group.map((item) => (
+                      <div key={item.id} className="flex items-center gap-3 px-4 py-3">
+                        <p className="text-sm font-medium text-gray-900 flex-1 truncate">{item.description}</p>
+                        <p className="text-sm font-semibold text-gray-800 flex-shrink-0">
+                          ${item.myAmount.toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
           </>
         )}

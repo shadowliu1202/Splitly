@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
 import { Group, Expense } from '@/types'
+import { formatDateLabel, groupByDate } from '@/lib/utils/date'
 import ExpenseCard from '@/components/expenses/ExpenseCard'
 import AddVirtualMemberForm from '@/components/groups/AddVirtualMemberForm'
 import Avatar from '@/components/ui/Avatar'
@@ -196,7 +197,7 @@ export default function GroupDetailPage() {
           </button>
         </div>
 
-        {/* Expenses */}
+        {/* Expenses grouped by date */}
         {expenses.length === 0 ? (
           <div className="text-center py-16 space-y-2 text-gray-400">
             <p className="text-4xl">🧾</p>
@@ -204,13 +205,22 @@ export default function GroupDetailPage() {
             <p className="text-sm">點擊右下角新增支出</p>
           </div>
         ) : (
-          expenses.map((expense) => (
-            <ExpenseCard
-              key={expense.id}
-              expense={expense}
-              currentUserId={user?.id ?? ''}
-              groupId={groupId}
-            />
+          groupByDate(expenses, (e) => e.happened_at).map(([date, group]) => (
+            <div key={date}>
+              <p className="text-xs font-semibold text-gray-400 mb-2 px-1">
+                {formatDateLabel(date)}
+              </p>
+              <div className="space-y-3">
+                {group.map((expense) => (
+                  <ExpenseCard
+                    key={expense.id}
+                    expense={expense}
+                    currentUserId={user?.id ?? ''}
+                    groupId={groupId}
+                  />
+                ))}
+              </div>
+            </div>
           ))
         )}
       </div>
