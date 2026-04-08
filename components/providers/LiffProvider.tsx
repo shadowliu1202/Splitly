@@ -60,6 +60,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
           initTimeout,
         ])
 
+        sessionStorage.removeItem('liff_retry')
         setLiff(liffInstance)
 
         const loggedIn = liffInstance.isLoggedIn()
@@ -90,6 +91,16 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error('[LIFF] init error:', err)
+        // On first open in LINE, liff.init() redirects for auth and never resolves.
+        // When we hit our timeout, auto-reload once so the returning page (with auth code) can init cleanly.
+        const isTimeout = err instanceof Error && err.message.includes('timeout')
+        const alreadyRetried = sessionStorage.getItem('liff_retry') === '1'
+        if (isTimeout && !alreadyRetried) {
+          sessionStorage.setItem('liff_retry', '1')
+          window.location.reload()
+          return
+        }
+        sessionStorage.removeItem('liff_retry')
         setError(err instanceof Error ? err : new Error('LIFF 初始化失敗'))
       } finally {
         setIsReady(true)
