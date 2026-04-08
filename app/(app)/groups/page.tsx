@@ -9,10 +9,12 @@ import GroupCard from '@/components/groups/GroupCard'
 import Avatar from '@/components/ui/Avatar'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
+let groupsCache: Group[] | null = null
+
 export default function GroupsPage() {
   const { user } = useUser()
-  const [groups, setGroups] = useState<Group[]>([])
-  const [loading, setLoading] = useState(true)
+  const [groups, setGroups] = useState<Group[]>(groupsCache ?? [])
+  const [loading, setLoading] = useState(!groupsCache)
 
   useEffect(() => {
     if (!user) return
@@ -21,7 +23,10 @@ export default function GroupsPage() {
       headers: { 'x-user-id': user.id },
     })
       .then((r) => r.json())
-      .then((data) => setGroups(data.groups ?? []))
+      .then((data) => {
+        groupsCache = data.groups ?? []
+        setGroups(groupsCache!)
+      })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [user])
