@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 import { LiffProvider } from '@/components/providers/LiffProvider'
 import { UserProvider } from '@/components/providers/UserProvider'
+import { SpeedInsights } from '@vercel/speed-insights/next'
 
 export const metadata: Metadata = {
   title: 'Splitly – 分帳好簡單',
@@ -28,6 +29,7 @@ export default function RootLayout({
         <LiffProvider>
           <UserProvider>{children}</UserProvider>
         </LiffProvider>
+        <SpeedInsights />
       </body>
     </html>
   )
