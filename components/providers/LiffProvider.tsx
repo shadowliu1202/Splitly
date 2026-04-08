@@ -63,13 +63,23 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         setLiff(liffInstance)
 
         const loggedIn = liffInstance.isLoggedIn()
+
+        // Inside LINE but no session yet — trigger login redirect (don't set isReady; page will reload)
+        if (!loggedIn && liffInstance.isInClient()) {
+          liffInstance.login()
+          return
+        }
+
         setIsLoggedIn(loggedIn)
 
         if (loggedIn) {
-          const [userProfile, token] = await Promise.all([
-            liffInstance.getProfile(),
-            liffInstance.getAccessToken(),
-          ])
+          const profileTimeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('getProfile timeout')), 10000)
+          )
+          const [userProfile, token] = await Promise.race([
+            Promise.all([liffInstance.getProfile(), liffInstance.getAccessToken()]),
+            profileTimeout,
+          ]) as [Awaited<ReturnType<typeof liffInstance.getProfile>>, string]
           setProfile({
             userId: userProfile.userId,
             displayName: userProfile.displayName,

@@ -41,9 +41,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     const syncUser = async () => {
       setIsLoading(true)
       try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 15000)
         const res = await fetch('/api/auth/line', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
           body: JSON.stringify({
             accessToken,
             profile: {
@@ -53,6 +56,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
             },
           }),
         })
+        clearTimeout(timeoutId)
 
         if (!res.ok) throw new Error('登入失敗')
 
