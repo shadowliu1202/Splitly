@@ -15,19 +15,17 @@ import Avatar from '@/components/ui/Avatar'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 import { buildShareText } from '@/lib/liff/client'
 
+// Module-level cache — survives SPA navigation, no SSR/hydration issues
+type PageCache = { group: Group; expenses: Expense[]; settlements: Settlement[] }
+const groupPageCache = new Map<string, PageCache>()
+
 export default function GroupDetailPage() {
   const { groupId } = useParams<{ groupId: string }>()
   const { user } = useUser()
   const { liff } = useLiff()
   const router = useRouter()
 
-  const readCache = () => {
-    try {
-      const raw = sessionStorage.getItem(`group_page_${groupId}`)
-      return raw ? JSON.parse(raw) : null
-    } catch { return null }
-  }
-  const cached = readCache()
+  const cached = groupPageCache.get(groupId)
 
   const [group, setGroup] = useState<Group | null>(cached?.group ?? null)
   const [expenses, setExpenses] = useState<Expense[]>(cached?.expenses ?? [])
@@ -55,8 +53,8 @@ export default function GroupDetailPage() {
       setGroup(group)
       setExpenses(expenses ?? [])
       setSettlements(settlements ?? [])
+      groupPageCache.set(groupId, { group, expenses: expenses ?? [], settlements: settlements ?? [] })
       try {
-        sessionStorage.setItem(`group_page_${groupId}`, JSON.stringify({ group, expenses: expenses ?? [], settlements: settlements ?? [] }))
         const memberUsers = (group.group_members ?? []).map((m: { users: unknown }) => m.users).filter(Boolean)
         sessionStorage.setItem(`members_${groupId}`, JSON.stringify(memberUsers))
       } catch {}
