@@ -24,6 +24,24 @@ const UserContext = createContext<UserContextType>({
   refresh: () => {},
 })
 
+const USER_CACHE_KEY = 'splitly_user'
+
+function getCachedUser(lineUserId: string): User | null {
+  try {
+    const raw = sessionStorage.getItem(USER_CACHE_KEY)
+    if (!raw) return null
+    const cached = JSON.parse(raw)
+    if (cached?.line_user_id === lineUserId) return cached as User
+  } catch {}
+  return null
+}
+
+function setCachedUser(user: User) {
+  try {
+    sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(user))
+  } catch {}
+}
+
 export function UserProvider({ children }: { children: ReactNode }) {
   const { isReady, isLoggedIn, profile, accessToken } = useLiff()
   const [user, setUser] = useState<User | null>(null)
@@ -38,8 +56,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
       return
     }
 
+    // Use cached user immediately to avoid loading flash
+    const cached = getCachedUser(profile.userId)
+    if (cached) {
+      setUser(cached)
+      setIsLoading(false)
+    }
+
     const syncUser = async () => {
-      setIsLoading(true)
+      if (!cached) setIsLoading(true)
       try {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 15000)
@@ -61,10 +86,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
         if (!res.ok) throw new Error('登入失敗')
 
         const data = await res.json()
+        setCachedUser(data.user)
         setUser(data.user)
       } catch (err) {
-        console.error('[UserProvider] sync error:', err)
-        setError(err instanceof Error ? err : new Error('登入失敗'))
+        if (!cached) {
+          console.error('[UserProvider] sync error:', err)
+          setError(err instanceof Error ? err : new Error('登入失敗'))
+        }
       } finally {
         setIsLoading(false)
       }
