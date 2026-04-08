@@ -21,10 +21,18 @@ export default function GroupDetailPage() {
   const { liff } = useLiff()
   const router = useRouter()
 
-  const [group, setGroup] = useState<Group | null>(null)
-  const [expenses, setExpenses] = useState<Expense[]>([])
-  const [settlements, setSettlements] = useState<Settlement[]>([])
-  const [loading, setLoading] = useState(true)
+  const readCache = () => {
+    try {
+      const raw = sessionStorage.getItem(`group_page_${groupId}`)
+      return raw ? JSON.parse(raw) : null
+    } catch { return null }
+  }
+  const cached = readCache()
+
+  const [group, setGroup] = useState<Group | null>(cached?.group ?? null)
+  const [expenses, setExpenses] = useState<Expense[]>(cached?.expenses ?? [])
+  const [settlements, setSettlements] = useState<Settlement[]>(cached?.settlements ?? [])
+  const [loading, setLoading] = useState(!cached)
   const [showAddVirtual, setShowAddVirtual] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
@@ -47,8 +55,8 @@ export default function GroupDetailPage() {
       setGroup(group)
       setExpenses(expenses ?? [])
       setSettlements(settlements ?? [])
-      // Cache members for the new expense page to read instantly
       try {
+        sessionStorage.setItem(`group_page_${groupId}`, JSON.stringify({ group, expenses: expenses ?? [], settlements: settlements ?? [] }))
         const memberUsers = (group.group_members ?? []).map((m: { users: unknown }) => m.users).filter(Boolean)
         sessionStorage.setItem(`members_${groupId}`, JSON.stringify(memberUsers))
       } catch {}
