@@ -47,6 +47,12 @@ export default function GroupDetailPage() {
       setGroup(group)
       setExpenses(expenses ?? [])
       setSettlements(settlements ?? [])
+      // Cache members for the new expense page to read instantly
+      try {
+        const memberUsers = (group.group_members ?? []).map((m: { users: unknown }) => m.users).filter(Boolean)
+        sessionStorage.setItem(`members_${groupId}`, JSON.stringify(memberUsers))
+      } catch {}
+
     } catch (err) {
       console.error(err)
     } finally {

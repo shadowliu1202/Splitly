@@ -14,8 +14,13 @@ type Tab = 'expense' | 'transfer'
 export default function NewExpensePage() {
   const { groupId } = useParams<{ groupId: string }>()
   const { user } = useUser()
-  const [members, setMembers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
+  const [members, setMembers] = useState<User[]>(() => {
+    try {
+      const cached = sessionStorage.getItem(`members_${groupId}`)
+      return cached ? JSON.parse(cached) : []
+    } catch { return [] }
+  })
+  const [loading, setLoading] = useState(members.length === 0)
   const [tab, setTab] = useState<Tab>('expense')
 
   useEffect(() => {
@@ -25,7 +30,11 @@ export default function NewExpensePage() {
       headers: { 'x-user-id': user.id },
     })
       .then((r) => r.json())
-      .then((data) => setMembers(data.members ?? []))
+      .then((data) => {
+        const fresh = data.members ?? []
+        setMembers(fresh)
+        try { sessionStorage.setItem(`members_${groupId}`, JSON.stringify(fresh)) } catch {}
+      })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [groupId, user])
