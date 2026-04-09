@@ -49,38 +49,34 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         const liffModule = await import('@line/liff')
         const liffInstance = liffModule.default
 
-        const initTimeout = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('LIFF init timeout (15s)')), 15000)
-        )
-        await Promise.race([
-          liffInstance.init({
-            liffId: process.env.NEXT_PUBLIC_LIFF_ID!,
-            withLoginOnExternalBrowser: true,
-          }),
-          initTimeout,
-        ])
+        // In LINE's in-app browser, liff.init() handles auth via redirect internally.
+        // Adding a timeout would race against that redirect and fire prematurely.
+        // Only apply timeout for external browsers where liff.init() might truly hang.
+        const isLineBrowser = /Line\//i.test(navigator.userAgent)
+        const initPromise = liffInstance.init({
+          liffId: process.env.NEXT_PUBLIC_LIFF_ID!,
+          withLoginOnExternalBrowser: true,
+        })
 
-        sessionStorage.removeItem('liff_retry')
+        if (isLineBrowser) {
+          await initPromise
+        } else {
+          const initTimeout = new Promise<never>((_, reject) =>
+            setTimeout(() => reject(new Error('LIFF init timeout (15s)')), 15000)
+          )
+          await Promise.race([initPromise, initTimeout])
+        }
+
         setLiff(liffInstance)
 
         const loggedIn = liffInstance.isLoggedIn()
-
-        // Inside LINE but no session yet — trigger login redirect (don't set isReady; page will reload)
-        if (!loggedIn && liffInstance.isInClient()) {
-          liffInstance.login()
-          return
-        }
-
         setIsLoggedIn(loggedIn)
 
         if (loggedIn) {
-          const profileTimeout = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('getProfile timeout')), 10000)
-          )
-          const [userProfile, token] = await Promise.race([
-            Promise.all([liffInstance.getProfile(), liffInstance.getAccessToken()]),
-            profileTimeout,
-          ]) as [Awaited<ReturnType<typeof liffInstance.getProfile>>, string]
+          const [userProfile, token] = await Promise.all([
+            liffInstance.getProfile(),
+            liffInstance.getAccessToken(),
+          ])
           setProfile({
             userId: userProfile.userId,
             displayName: userProfile.displayName,
@@ -91,16 +87,6 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         }
       } catch (err) {
         console.error('[LIFF] init error:', err)
-        // On first open in LINE, liff.init() redirects for auth and never resolves.
-        // When we hit our timeout, auto-reload once so the returning page (with auth code) can init cleanly.
-        const isTimeout = err instanceof Error && err.message.includes('timeout')
-        const alreadyRetried = sessionStorage.getItem('liff_retry') === '1'
-        if (isTimeout && !alreadyRetried) {
-          sessionStorage.setItem('liff_retry', '1')
-          window.location.reload()
-          return
-        }
-        sessionStorage.removeItem('liff_retry')
         setError(err instanceof Error ? err : new Error('LIFF 初始化失敗'))
       } finally {
         setIsReady(true)
