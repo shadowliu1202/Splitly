@@ -200,46 +200,6 @@ export default function AddExpenseForm({
         />
       </div>
 
-      {/* Photo */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">附上照片（選填）</label>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="hidden"
-          onChange={handlePhotoChange}
-        />
-        {photoPreview ? (
-          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-100">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photoPreview} alt="receipt" className="w-full h-full object-cover" />
-            {uploadingPhoto && (
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <span className="text-white text-xs">上傳中...</span>
-              </div>
-            )}
-            <button
-              type="button"
-              onClick={() => { setPhotoPreview(null); setPhotoUrl(null) }}
-              className="absolute top-2 right-2 bg-black/50 rounded-full p-1"
-            >
-              <X size={14} className="text-white" />
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => fileRef.current?.click()}
-            className="w-full border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center gap-2 text-gray-400 active:bg-gray-50"
-          >
-            <Camera size={24} />
-            <span className="text-sm">拍照或選擇圖片</span>
-          </button>
-        )}
-      </div>
-
       {/* Remark */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">備註（選填）</label>
@@ -336,6 +296,46 @@ export default function AddExpenseForm({
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Photo */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">附上照片（選填）</label>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={handlePhotoChange}
+        />
+        {photoPreview ? (
+          <div className="relative w-full aspect-video rounded-xl overflow-hidden bg-gray-100">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photoPreview} alt="receipt" className="w-full h-full object-cover" />
+            {uploadingPhoto && (
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                <span className="text-white text-xs">上傳中...</span>
+              </div>
+            )}
+            <button
+              type="button"
+              onClick={() => { setPhotoPreview(null); setPhotoUrl(null) }}
+              className="absolute top-2 right-2 bg-black/50 rounded-full p-1"
+            >
+              <X size={14} className="text-white" />
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="w-full border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center gap-2 text-gray-400 active:bg-gray-50"
+          >
+            <Camera size={24} />
+            <span className="text-sm">拍照或選擇圖片</span>
+          </button>
+        )}
       </div>
 
       <Button type="submit" loading={loading} className="w-full" size="lg">
