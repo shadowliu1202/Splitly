@@ -3,8 +3,9 @@
 import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Camera, X } from 'lucide-react'
-import { User, SplitType } from '@/types'
+import { User, SplitType, ExpenseCategory } from '@/types'
 import { toLocalInputDatetime } from '@/lib/utils/date'
+import { EXPENSE_CATEGORIES } from '@/lib/utils/expenseCategories'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Avatar from '@/components/ui/Avatar'
@@ -33,6 +34,7 @@ export default function AddExpenseForm({
 
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
+  const [category, setCategory] = useState<ExpenseCategory>('other')
   const [paidBy, setPaidBy] = useState(currentUserId)
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [happenedAt, setHappenedAt] = useState(toLocalInputDatetime())
@@ -121,6 +123,7 @@ export default function AddExpenseForm({
           amount: totalAmount,
           paidBy,
           splitType,
+          category,
           happenedAt: new Date(happenedAt).toISOString(),
           photoUrl,
           remark: remark.trim() || null,
@@ -153,6 +156,34 @@ export default function AddExpenseForm({
           placeholder="例：晚餐、計程車費..."
           required
         />
+      </div>
+
+      {/* Category */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-2">類型</label>
+        <div className="grid grid-cols-4 gap-2">
+          {EXPENSE_CATEGORIES.map((cat) => {
+            const Icon = cat.icon
+            const selected = category === cat.id
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategory(cat.id)}
+                className={`flex flex-col items-center gap-1 py-2 rounded-xl border-2 transition-colors ${
+                  selected ? 'border-line-green bg-green-50' : 'border-gray-100 bg-white active:bg-gray-50'
+                }`}
+              >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.bg}`}>
+                  <Icon size={16} className={cat.text} />
+                </div>
+                <span className={`text-xs ${selected ? 'text-line-green font-medium' : 'text-gray-500'}`}>
+                  {cat.label}
+                </span>
+              </button>
+            )
+          })}
+        </div>
       </div>
 
       {/* Amount */}

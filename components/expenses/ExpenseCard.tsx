@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { Expense } from '@/types'
 import { cn } from '@/lib/utils/cn'
-import { ShoppingBag } from 'lucide-react'
+import { getCategoryMeta } from '@/lib/utils/expenseCategories'
 
 interface Props {
   expense: Expense
@@ -13,13 +13,15 @@ export default function ExpenseCard({ expense, currentUserId, groupId }: Props) 
   const payer = expense.payer
   const myShare = expense.expense_splits?.find((s) => s.user_id === currentUserId)
   const iAmPayer = expense.paid_by === currentUserId
+  const cat = getCategoryMeta(expense.category)
+  const Icon = cat.icon
 
   return (
     <Link href={`/groups/${groupId}/expenses/${expense.id}`}>
       <div className="flex items-center gap-3 px-4 py-3 bg-white active:bg-gray-50">
-        {/* Icon */}
-        <div className="w-10 h-10 rounded-xl bg-amber-400 flex items-center justify-center flex-shrink-0">
-          <ShoppingBag size={18} className="text-white" />
+        {/* Category icon */}
+        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0', cat.bg)}>
+          <Icon size={18} className={cat.text} />
         </div>
 
         {/* Text */}

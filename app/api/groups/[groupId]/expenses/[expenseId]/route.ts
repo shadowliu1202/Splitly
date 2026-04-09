@@ -63,6 +63,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (body.paidBy !== undefined) updates.paid_by = body.paidBy
   if (body.splitType !== undefined) updates.split_type = body.splitType
   if (body.happenedAt !== undefined) updates.happened_at = body.happenedAt
+  if (body.category !== undefined) updates.category = body.category
   if (body.photoUrl !== undefined) updates.photo_url = body.photoUrl
   if (body.remark !== undefined) updates.remark = body.remark ?? null
 

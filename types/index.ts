@@ -1,4 +1,5 @@
 export type SplitType = 'equal' | 'custom' | 'percentage'
+export type ExpenseCategory = 'food' | 'transport' | 'accommodation' | 'shopping' | 'entertainment' | 'attraction' | 'daily' | 'other'
 
 // ── DB Models ─────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ export interface Expense {
   amount: number
   description: string
   split_type: SplitType
+  category: ExpenseCategory
   happened_at: string   // DATE as YYYY-MM-DD
   photo_url: string | null
   remark: string | null
@@ -90,6 +92,7 @@ export interface CreateExpensePayload {
   amount: number
   paidBy: string
   splitType: SplitType
+  category?: ExpenseCategory
   happenedAt: string  // YYYY-MM-DD
   photoUrl?: string | null
   remark?: string | null
@@ -101,6 +104,7 @@ export interface UpdateExpensePayload {
   amount?: number
   paidBy?: string
   splitType?: SplitType
+  category?: ExpenseCategory
   happenedAt?: string
   photoUrl?: string | null
   remark?: string | null

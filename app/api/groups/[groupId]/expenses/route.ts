@@ -34,7 +34,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   const { groupId } = await params
   const body: CreateExpensePayload = await req.json()
-  const { description, amount, paidBy, splitType, happenedAt, photoUrl, remark, splits } = body
+  const { description, amount, paidBy, splitType, category, happenedAt, photoUrl, remark, splits } = body
 
   if (!description || !amount || !paidBy || !splits?.length) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -51,6 +51,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       amount,
       description,
       split_type: splitType,
+      category: category ?? 'other',
       happened_at: happenedAt ?? new Date().toISOString().slice(0, 10),
       photo_url: photoUrl ?? null,
       remark: remark ?? null,
