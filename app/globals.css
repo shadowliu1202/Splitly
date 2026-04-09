@@ -12,6 +12,14 @@ html,
 body {
   overscroll-behavior: none;
   height: 100%;
+  /* Prevent scroll from triggering LINE's bottom navigation bar */
+  overflow-x: hidden;
+  touch-action: pan-y;
+}
+
+/* Fill full screen in LINE LIFF to suppress browser chrome */
+#__next {
+  min-height: 100dvh;
 }
 
 /* Safe area for notched phones */
