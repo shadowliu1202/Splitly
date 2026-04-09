@@ -1,20 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
-import { usePathname } from 'next/navigation'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const { isReady, isLoggedIn, liff } = useLiff()
+  const { isReady, isLoggedIn } = useLiff()
   const { user, isLoading, error } = useUser()
-  const pathname = usePathname()
-
-  useEffect(() => {
-    if (!liff?.isInClient()) return
-    try { (liff as any).hideNavBar() } catch {}
-  }, [liff, pathname])
 
   // LIFF initialising
   if (!isReady) {

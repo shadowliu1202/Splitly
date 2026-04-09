@@ -69,12 +69,6 @@ export function LiffProvider({ children }: { children: ReactNode }) {
 
         setLiff(liffInstance)
 
-        // Hide LINE's navigation bar inside the LIFF webview
-        if (liffInstance.isInClient()) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          try { (liffInstance as any).hideNavBar() } catch {}
-        }
-
         const loggedIn = liffInstance.isLoggedIn()
         setIsLoggedIn(loggedIn)
 
