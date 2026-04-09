@@ -160,30 +160,16 @@ export default function AddExpenseForm({
 
       {/* Category */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">類型</label>
-        <div className="grid grid-cols-4 gap-2">
-          {EXPENSE_CATEGORIES.map((cat) => {
-            const Icon = cat.icon
-            const selected = category === cat.id
-            return (
-              <button
-                key={cat.id}
-                type="button"
-                onClick={() => setCategory(cat.id)}
-                className={`flex flex-col items-center gap-1 py-2 rounded-xl border-2 transition-colors ${
-                  selected ? 'border-line-green bg-green-50' : 'border-gray-100 bg-white active:bg-gray-50'
-                }`}
-              >
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${cat.bg}`}>
-                  <Icon size={16} className={cat.text} />
-                </div>
-                <span className={`text-xs ${selected ? 'text-line-green font-medium' : 'text-gray-500'}`}>
-                  {cat.label}
-                </span>
-              </button>
-            )
-          })}
-        </div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">類型</label>
+        <select
+          value={category}
+          onChange={(e) => setCategory(e.target.value as ExpenseCategory)}
+          className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:border-line-green"
+        >
+          {EXPENSE_CATEGORIES.map((cat) => (
+            <option key={cat.id} value={cat.id}>{cat.label}</option>
+          ))}
+        </select>
       </div>
 
       {/* Amount */}
