@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Plus, Share2, UserPlus, Pencil, Check, X, Scale, BarChart2 } from 'lucide-react'
+import { useScrollDirection } from '@/lib/hooks/useScrollDirection'
 import Link from 'next/link'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
@@ -26,6 +27,7 @@ export default function GroupDetailPage() {
   const router = useRouter()
 
   const cached = groupPageCache.get(groupId)
+  const scrollDir = useScrollDirection()
 
   const [group, setGroup] = useState<Group | null>(cached?.group ?? null)
   const [expenses, setExpenses] = useState<Expense[]>(cached?.expenses ?? [])
@@ -116,7 +118,7 @@ export default function GroupDetailPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header with inline rename */}
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-100 flex items-center h-14 px-2">
+      <header className={`sticky top-0 z-30 bg-white border-b border-gray-100 flex items-center h-14 px-2 transition-transform duration-300 ${scrollDir === 'down' ? '-translate-y-full' : 'translate-y-0'}`}>
         <button
           onClick={() => window.history.back()}
           className="p-2 rounded-full active:bg-gray-100 flex-shrink-0"

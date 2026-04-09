@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Plus, Receipt } from 'lucide-react'
 import { useUser } from '@/components/providers/UserProvider'
 import { Group } from '@/types'
+import { useScrollDirection } from '@/lib/hooks/useScrollDirection'
 import GroupCard from '@/components/groups/GroupCard'
 import Avatar from '@/components/ui/Avatar'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -13,6 +14,7 @@ let groupsCache: Group[] | null = null
 
 export default function GroupsPage() {
   const { user } = useUser()
+  const scrollDir = useScrollDirection()
   const [groups, setGroups] = useState<Group[]>(groupsCache ?? [])
   const [loading, setLoading] = useState(!groupsCache)
 
@@ -34,7 +36,7 @@ export default function GroupsPage() {
   return (
     <div className="min-h-screen">
       {/* Top bar */}
-      <header className="sticky top-0 z-30 bg-white border-b border-gray-100 px-4 h-14 flex items-center justify-between">
+      <header className={`sticky top-0 z-30 bg-white border-b border-gray-100 px-4 h-14 flex items-center justify-between transition-transform duration-300 ${scrollDir === 'down' ? '-translate-y-full' : 'translate-y-0'}`}>
         <div className="flex items-center gap-2">
           <Receipt size={22} className="text-line-green" />
           <span className="font-bold text-lg text-gray-900">Splitly</span>
