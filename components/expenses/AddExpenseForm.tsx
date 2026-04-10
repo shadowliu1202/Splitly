@@ -163,8 +163,8 @@ export default function AddExpenseForm({
 
   const symbol = getCurrencySymbol(currency)
   const defaultSymbol = getCurrencySymbol(groupCurrency)
-  // Dynamic left padding: 12px base + ~8px per character
-  const symbolPadding = `${12 + symbol.length * 8}px`
+  // Dynamic left padding: 8px base + ~12px per character
+  const symbolPadding = `${8 + symbol.length * 12}px`
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
