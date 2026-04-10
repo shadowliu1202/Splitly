@@ -39,7 +39,7 @@ export default function ExpenseCard({ expense, currentUserId, groupId, groupCurr
           <p className="text-sm font-semibold text-gray-900 truncate">{expense.description}</p>
           <p className="text-xs text-gray-400 mt-0.5">
             {payer?.display_name ?? '未知'} 先付{' '}
-            {symbol}{Number(expense.amount).toLocaleString()}
+            <span className="text-red-500">{symbol}{Number(expense.amount).toLocaleString()}</span>
             {isForeign && convertedTotal !== null && (
               <span className="ml-1 text-gray-300">
                 ≈ {defaultSymbol}{convertedTotal.toLocaleString()}
@@ -51,7 +51,7 @@ export default function ExpenseCard({ expense, currentUserId, groupId, groupCurr
 
         {/* My share */}
         {myShare && (
-          <p className={cn('text-sm font-semibold flex-shrink-0', iAmPayer ? 'text-line-green' : 'text-red-500')}>
+          <p className="text-sm font-semibold flex-shrink-0 text-red-500">
             {symbol}{Number(myShare.amount).toLocaleString()}
           </p>
         )}

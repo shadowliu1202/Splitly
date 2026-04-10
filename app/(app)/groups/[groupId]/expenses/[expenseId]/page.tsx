@@ -499,13 +499,13 @@ export default function ExpenseDetailPage() {
                   <p className="font-semibold text-gray-900 text-base">{expense.description}</p>
                   <p className="text-xs text-gray-400 mt-0.5">
                     {payerUser?.display_name ?? '未知'} 付了{' '}
-                    <span className="font-semibold text-gray-700 text-sm">
+                    <span className="font-semibold text-red-500 text-sm">
                       {expSymbol}{Number(expense.amount).toLocaleString()}
                     </span>
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="text-2xl font-bold text-gray-900">
+                  <p className="text-2xl font-bold text-red-500">
                     {expSymbol}{Number(expense.amount).toLocaleString()}
                   </p>
                   {isExpForeign && expConverted !== null && (
@@ -567,7 +567,7 @@ export default function ExpenseDetailPage() {
                     >
                       <Avatar src={splitUser?.avatar_url} name={splitUser?.display_name ?? '?'} size={36} />
                       <span className="flex-1 text-sm text-gray-800">{splitUser?.display_name ?? split.user_id.slice(0, 6)}</span>
-                      <span className={`text-sm font-semibold ${split.user_id === expense.paid_by ? 'text-line-green' : 'text-red-500'}`}>
+                      <span className="text-sm font-semibold text-red-500">
                         {expSymbol}{Number(split.amount).toLocaleString()}
                       </span>
                     </div>
