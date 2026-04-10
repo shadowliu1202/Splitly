@@ -1,37 +1,7 @@
 /**
- * LINE Messaging API push helper.
- * Requires LINE_CHANNEL_ACCESS_TOKEN in server environment.
+ * LINE message text builders.
+ * Messages are sent via liff.sendMessages() on the client side (personal account).
  */
-
-interface LineTextMessage {
-  type: 'text'
-  text: string
-}
-
-export async function pushLineMessage(
-  lineGroupId: string,
-  messages: LineTextMessage[]
-): Promise<void> {
-  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN
-  if (!token) {
-    console.warn('[lineNotify] LINE_CHANNEL_ACCESS_TOKEN is not set — skipping push')
-    return
-  }
-
-  const res = await fetch('https://api.line.me/v2/bot/message/push', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({ to: lineGroupId, messages }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text()
-    console.error('[lineNotify] Push failed:', res.status, body)
-  }
-}
 
 export function buildExpenseNotifyText(opts: {
   groupName: string

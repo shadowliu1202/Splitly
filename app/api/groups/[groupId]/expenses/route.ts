@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
 import { CreateExpensePayload } from '@/types'
-import { pushLineMessage, buildExpenseNotifyText } from '@/lib/utils/lineNotify'
 
 type Params = { params: Promise<{ groupId: string }> }
 
@@ -34,8 +33,8 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { groupId } = await params
-  const body: CreateExpensePayload & { notify?: boolean; payerName?: string } = await req.json()
-  const { description, amount, paidBy, splitType, category, currency, exchangeRate, happenedAt, photoUrl, remark, splits, notify, payerName } = body
+  const body: CreateExpensePayload = await req.json()
+  const { description, amount, paidBy, splitType, category, currency, exchangeRate, happenedAt, photoUrl, remark, splits } = body
 
   if (!description || !amount || !paidBy || !splits?.length) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -74,27 +73,6 @@ export async function POST(req: NextRequest, { params }: Params) {
   )
 
   if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 })
-
-  // Send LINE notification if requested
-  if (notify) {
-    const { data: group } = await supabase
-      .from('groups')
-      .select('name, line_group_id')
-      .eq('id', groupId)
-      .single() as unknown as { data: { name: string; line_group_id: string | null } | null }
-
-    if (group?.line_group_id) {
-      const text = buildExpenseNotifyText({
-        groupName: group.name,
-        description,
-        amount: Number(amount),
-        currency: currency ?? 'TWD',
-        payerName: payerName ?? '未知',
-        splitCount: splits.length,
-      })
-      await pushLineMessage(group.line_group_id, [{ type: 'text', text }])
-    }
-  }
 
   return NextResponse.json({ expense }, { status: 201 })
 }

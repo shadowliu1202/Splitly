@@ -25,7 +25,7 @@ export default function NewExpensePage() {
   const [groupCurrency, setGroupCurrency] = useState<string>(() => {
     try { return sessionStorage.getItem(`currency_${groupId}`) ?? 'TWD' } catch { return 'TWD' }
   })
-  const [groupHasLineLink, setGroupHasLineLink] = useState(false)
+  const [groupName, setGroupName] = useState('')
   const [loading, setLoading] = useState(members.length === 0)
   const [tab, setTab] = useState<Tab>('expense')
 
@@ -45,7 +45,7 @@ export default function NewExpensePage() {
 
         const currency = groupData.group?.default_currency ?? 'TWD'
         setGroupCurrency(currency)
-        setGroupHasLineLink(!!groupData.group?.line_group_id)
+        setGroupName(groupData.group?.name ?? '')
         try { sessionStorage.setItem(`currency_${groupId}`, currency) } catch {}
       })
       .catch(console.error)
@@ -87,7 +87,7 @@ export default function NewExpensePage() {
             members={members}
             currentUserId={user?.id ?? ''}
             groupCurrency={groupCurrency}
-            groupHasLineLink={groupHasLineLink}
+            groupName={groupName}
           />
         ) : (
           <AddTransferForm
@@ -95,7 +95,7 @@ export default function NewExpensePage() {
             members={members}
             currentUserId={user?.id ?? ''}
             groupCurrency={groupCurrency}
-            groupHasLineLink={groupHasLineLink}
+            groupName={groupName}
           />
         )}
       </div>

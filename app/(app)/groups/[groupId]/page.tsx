@@ -40,8 +40,6 @@ export default function GroupDetailPage() {
   const [savingName, setSavingName] = useState(false)
   const [editingCurrency, setEditingCurrency] = useState(false)
   const [currencyInput, setCurrencyInput] = useState('')
-  const [liffLineGroupId, setLiffLineGroupId] = useState<string | null>(null)
-  const [linkingLine, setLinkingLine] = useState(false)
 
   const fetchAll = useCallback(async () => {
     if (!user) return
@@ -75,17 +73,6 @@ export default function GroupDetailPage() {
   }, [groupId, user])
 
   useEffect(() => { fetchAll() }, [fetchAll])
-
-  // Detect LINE group context from LIFF
-  useEffect(() => {
-    if (!liff) return
-    try {
-      const ctx = liff.getContext?.()
-      if (ctx?.type === 'group' && ctx?.groupId) {
-        setLiffLineGroupId(ctx.groupId)
-      }
-    } catch {}
-  }, [liff])
 
   const handleRename = async () => {
     if (!user || !nameInput.trim() || nameInput.trim() === group?.name) {
@@ -125,23 +112,6 @@ export default function GroupDetailPage() {
       }
     } finally {
       setEditingCurrency(false)
-    }
-  }
-
-  const handleLinkLine = async (lineGroupId: string | null) => {
-    if (!user) return
-    setLinkingLine(true)
-    try {
-      const res = await fetch(`/api/groups/${groupId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
-        body: JSON.stringify({ lineGroupId }),
-      })
-      if (res.ok) {
-        setGroup((prev) => prev ? { ...prev, line_group_id: lineGroupId } : prev)
-      }
-    } finally {
-      setLinkingLine(false)
     }
   }
 
@@ -265,33 +235,6 @@ export default function GroupDetailPage() {
             </button>
           )}
         </div>
-        {/* LINE group notification row */}
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-500">LINE 群組通知</span>
-          {group.line_group_id ? (
-            <div className="flex items-center gap-2">
-              <span className="text-line-green font-medium text-xs">已連結 ✓</span>
-              <button
-                onClick={() => handleLinkLine(null)}
-                disabled={linkingLine}
-                className="text-xs text-gray-400 active:opacity-70"
-              >
-                解除
-              </button>
-            </div>
-          ) : liffLineGroupId ? (
-            <button
-              onClick={() => handleLinkLine(liffLineGroupId)}
-              disabled={linkingLine}
-              className="text-xs bg-line-green text-white px-3 py-1 rounded-full active:opacity-70"
-            >
-              {linkingLine ? '連結中...' : '連結此 LINE 群組'}
-            </button>
-          ) : (
-            <span className="text-xs text-gray-400">從 LINE 群組開啟以連結</span>
-          )}
-        </div>
-
         <div className="flex items-center gap-3 overflow-x-auto">
           {realMembers.map((m) => (
             <div key={m.user_id} className="flex flex-col items-center gap-1 flex-shrink-0">

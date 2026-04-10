@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { adminClient } from '@/lib/supabase/admin'
-import { pushLineMessage, buildTransferNotifyText } from '@/lib/utils/lineNotify'
 
 type Params = { params: Promise<{ groupId: string }> }
 
@@ -33,7 +32,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { groupId } = await params
-  const { fromUserId, toUserId, amount, currency, exchangeRate, settledAt, remark, photoUrl, notify, fromName, toName } = await req.json()
+  const { fromUserId, toUserId, amount, currency, exchangeRate, settledAt, remark, photoUrl } = await req.json()
 
   if (!fromUserId || !toUserId || !amount) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -63,26 +62,6 @@ export async function POST(req: NextRequest, { params }: Params) {
     .single()
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-
-  // Send LINE notification if requested
-  if (notify) {
-    const { data: group } = await supabase
-      .from('groups')
-      .select('name, line_group_id')
-      .eq('id', groupId)
-      .single() as unknown as { data: { name: string; line_group_id: string | null } | null }
-
-    if (group?.line_group_id) {
-      const text = buildTransferNotifyText({
-        groupName: group.name,
-        fromName: fromName ?? '未知',
-        toName: toName ?? '未知',
-        amount: Number(amount),
-        currency: currency ?? 'TWD',
-      })
-      await pushLineMessage(group.line_group_id, [{ type: 'text', text }])
-    }
-  }
 
   return NextResponse.json({ settlement }, { status: 201 })
 }

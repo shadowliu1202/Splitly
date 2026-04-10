@@ -6,6 +6,8 @@ import { Camera, X } from 'lucide-react'
 import { User } from '@/types'
 import { toLocalInputDatetime } from '@/lib/utils/date'
 import { CURRENCIES, getCurrencySymbol, getRate, convertAmount } from '@/lib/utils/currencies'
+import { buildTransferNotifyText } from '@/lib/utils/lineNotify'
+import { useLiff } from '@/components/providers/LiffProvider'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Avatar from '@/components/ui/Avatar'
@@ -15,10 +17,11 @@ interface Props {
   members: User[]
   currentUserId: string
   groupCurrency?: string
-  groupHasLineLink?: boolean
+  groupName?: string
 }
 
-export default function AddTransferForm({ groupId, members, currentUserId, groupCurrency = 'TWD', groupHasLineLink = false }: Props) {
+export default function AddTransferForm({ groupId, members, currentUserId, groupCurrency = 'TWD', groupName = '' }: Props) {
+  const { liff } = useLiff()
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -106,12 +109,22 @@ export default function AddTransferForm({ groupId, members, currentUserId, group
           settledAt: new Date(settledAt).toISOString(),
           remark: remark.trim() || null,
           photoUrl,
-          notify: groupHasLineLink && notifyLine,
-          fromName: members.find((m) => m.id === fromUserId)?.display_name ?? '未知',
-          toName: members.find((m) => m.id === toUserId)?.display_name ?? '未知',
         }),
       })
       if (!res.ok) throw new Error('新增失敗')
+
+      // Send LINE message via personal account (liff.sendMessages)
+      if (notifyLine && liff) {
+        try {
+          const fromName = members.find((m) => m.id === fromUserId)?.display_name ?? '未知'
+          const toName = members.find((m) => m.id === toUserId)?.display_name ?? '未知'
+          await liff.sendMessages([{
+            type: 'text',
+            text: buildTransferNotifyText({ groupName, fromName, toName, amount: parsed, currency }),
+          }])
+        } catch { /* ignore */ }
+      }
+
       router.back()
     } catch {
       setError('新增轉帳失敗，請重試')
@@ -295,8 +308,8 @@ export default function AddTransferForm({ groupId, members, currentUserId, group
         </div>
       )}
 
-      {/* LINE notify checkbox */}
-      {groupHasLineLink && (
+      {/* LINE notify checkbox — only shown when opened inside LINE */}
+      {liff && (
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -304,7 +317,7 @@ export default function AddTransferForm({ groupId, members, currentUserId, group
             onChange={(e) => setNotifyLine(e.target.checked)}
             className="accent-line-green w-4 h-4"
           />
-          <span className="text-sm text-gray-700">發送通知到 LINE 群組</span>
+          <span className="text-sm text-gray-700">發送通知到 LINE</span>
         </label>
       )}
 

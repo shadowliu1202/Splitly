@@ -7,6 +7,8 @@ import { User, SplitType, ExpenseCategory } from '@/types'
 import { toLocalInputDatetime } from '@/lib/utils/date'
 import { EXPENSE_CATEGORIES } from '@/lib/utils/expenseCategories'
 import { CURRENCIES, getCurrencySymbol, getRate, convertAmount } from '@/lib/utils/currencies'
+import { buildExpenseNotifyText } from '@/lib/utils/lineNotify'
+import { useLiff } from '@/components/providers/LiffProvider'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Avatar from '@/components/ui/Avatar'
@@ -24,7 +26,7 @@ interface Props {
   members: User[]
   currentUserId: string
   groupCurrency?: string
-  groupHasLineLink?: boolean
+  groupName?: string
 }
 
 export default function AddExpenseForm({
@@ -32,8 +34,9 @@ export default function AddExpenseForm({
   members,
   currentUserId,
   groupCurrency = 'TWD',
-  groupHasLineLink = false,
+  groupName = '',
 }: Props) {
+  const { liff } = useLiff()
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -156,11 +159,21 @@ export default function AddExpenseForm({
           photoUrl,
           remark: remark.trim() || null,
           splits: splitData,
-          notify: groupHasLineLink && notifyLine,
-          payerName: members.find((m) => m.id === paidBy)?.display_name ?? '未知',
         }),
       })
       if (!res.ok) throw new Error('新增失敗')
+
+      // Send LINE message via personal account (liff.sendMessages)
+      if (notifyLine && liff) {
+        try {
+          const payerName = members.find((m) => m.id === paidBy)?.display_name ?? '未知'
+          await liff.sendMessages([{
+            type: 'text',
+            text: buildExpenseNotifyText({ groupName, description, amount: totalAmount, currency, payerName, splitCount: splitData.length }),
+          }])
+        } catch { /* ignore — user may have cancelled or not in group chat */ }
+      }
+
       router.back()
     } catch {
       setError('新增支出失敗，請重試')
@@ -413,8 +426,8 @@ export default function AddExpenseForm({
         )}
       </div>
 
-      {/* LINE notify checkbox */}
-      {groupHasLineLink && (
+      {/* LINE notify checkbox — only shown when opened inside LINE */}
+      {liff && (
         <label className="flex items-center gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -422,7 +435,7 @@ export default function AddExpenseForm({
             onChange={(e) => setNotifyLine(e.target.checked)}
             className="accent-line-green w-4 h-4"
           />
-          <span className="text-sm text-gray-700">發送通知到 LINE 群組</span>
+          <span className="text-sm text-gray-700">發送通知到 LINE</span>
         </label>
       )}
 
