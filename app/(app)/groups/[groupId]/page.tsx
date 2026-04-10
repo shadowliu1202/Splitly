@@ -6,7 +6,6 @@ import { Plus, Share2, UserPlus, Pencil, Check, X, Scale, BarChart2 } from 'luci
 import { useScrollDirection } from '@/lib/hooks/useScrollDirection'
 import Link from 'next/link'
 import { useUser } from '@/components/providers/UserProvider'
-import { useLiff } from '@/components/providers/LiffProvider'
 import { Group, Expense, Settlement } from '@/types'
 import { CURRENCIES } from '@/lib/utils/currencies'
 import { formatDateLabel, groupByDate } from '@/lib/utils/date'
@@ -24,7 +23,6 @@ const groupPageCache = new Map<string, PageCache>()
 export default function GroupDetailPage() {
   const { groupId } = useParams<{ groupId: string }>()
   const { user } = useUser()
-  const { liff } = useLiff()
   const router = useRouter()
 
   const cached = groupPageCache.get(groupId)
@@ -120,17 +118,7 @@ export default function GroupDetailPage() {
     const text = buildShareText(group.name, group.invite_code)
     const url = `${process.env.NEXT_PUBLIC_APP_URL ?? window.location.origin}/join/${group.invite_code}`
 
-    // 1. LIFF shareTargetPicker (requires permission in LINE Developers Console)
-    if (liff?.isApiAvailable('shareTargetPicker')) {
-      try {
-        await liff.shareTargetPicker([{ type: 'text', text }])
-        return
-      } catch {
-        // fall through
-      }
-    }
-
-    // 2. Web Share API — works in LINE in-app browser on mobile
+    // 1. Web Share API — works in LINE in-app browser on mobile
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({ title: `加入「${group.name}」分帳群組`, text, url })
@@ -140,7 +128,7 @@ export default function GroupDetailPage() {
       }
     }
 
-    // 3. Clipboard fallback
+    // 2. Clipboard fallback
     try {
       await navigator.clipboard.writeText(text)
       alert('邀請連結已複製！')
