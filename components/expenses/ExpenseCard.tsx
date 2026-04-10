@@ -38,8 +38,7 @@ export default function ExpenseCard({ expense, currentUserId, groupId, groupCurr
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-gray-900 truncate">{expense.description}</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            {payer?.display_name ?? '未知'} 先付{' '}
-            <span className="text-red-500">{symbol}{Number(expense.amount).toLocaleString()}</span>
+            {payer?.display_name ?? '未知'} 先付 {symbol}{Number(expense.amount).toLocaleString()}
             {isForeign && convertedTotal !== null && (
               <span className="ml-1 text-gray-300">
                 ≈ {defaultSymbol}{convertedTotal.toLocaleString()}
