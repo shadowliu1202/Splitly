@@ -329,7 +329,7 @@ export default function ExpenseDetailPage() {
                 </select>
                 <div className="relative flex-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{getCurrencySymbol(currency)}</span>
-                  <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="pl-8" min="0" step="any" />
+                  <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} style={{ paddingLeft: `${12 + getCurrencySymbol(currency).length * 8}px` }} min="0" step="any" />
                 </div>
               </div>
             </div>
