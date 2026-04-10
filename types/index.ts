@@ -18,6 +18,7 @@ export interface Group {
   invite_code: string
   created_by: string | null
   created_at: string
+  default_currency: string
   // joined via query
   group_members?: GroupMember[]
   member_count?: number
@@ -38,6 +39,8 @@ export interface Expense {
   description: string
   split_type: SplitType
   category: ExpenseCategory
+  currency: string
+  exchange_rate: number
   happened_at: string   // DATE as YYYY-MM-DD
   photo_url: string | null
   remark: string | null
@@ -93,6 +96,8 @@ export interface CreateExpensePayload {
   paidBy: string
   splitType: SplitType
   category?: ExpenseCategory
+  currency?: string
+  exchangeRate?: number
   happenedAt: string  // YYYY-MM-DD
   photoUrl?: string | null
   remark?: string | null
@@ -105,6 +110,8 @@ export interface UpdateExpensePayload {
   paidBy?: string
   splitType?: SplitType
   category?: ExpenseCategory
+  currency?: string
+  exchangeRate?: number
   happenedAt?: string
   photoUrl?: string | null
   remark?: string | null
@@ -113,4 +120,5 @@ export interface UpdateExpensePayload {
 
 export interface CreateGroupPayload {
   name: string
+  defaultCurrency?: string
 }

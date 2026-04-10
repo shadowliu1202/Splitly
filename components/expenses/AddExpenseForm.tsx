@@ -1,11 +1,12 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { Camera, X } from 'lucide-react'
 import { User, SplitType, ExpenseCategory } from '@/types'
 import { toLocalInputDatetime } from '@/lib/utils/date'
 import { EXPENSE_CATEGORIES } from '@/lib/utils/expenseCategories'
+import { CURRENCIES, getCurrencySymbol, getRate, convertAmount } from '@/lib/utils/currencies'
 import Button from '@/components/ui/Button'
 import Input from '@/components/ui/Input'
 import Avatar from '@/components/ui/Avatar'
@@ -22,12 +23,14 @@ interface Props {
   groupId: string
   members: User[]
   currentUserId: string
+  groupCurrency?: string
 }
 
 export default function AddExpenseForm({
   groupId,
   members,
   currentUserId,
+  groupCurrency = 'TWD',
 }: Props) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -35,6 +38,9 @@ export default function AddExpenseForm({
   const [description, setDescription] = useState('')
   const [amount, setAmount] = useState('')
   const [category, setCategory] = useState<ExpenseCategory>('other')
+  const [currency, setCurrency] = useState(groupCurrency)
+  const [exchangeRate, setExchangeRate] = useState('1')
+  const [fetchingRate, setFetchingRate] = useState(false)
   const [paidBy, setPaidBy] = useState(currentUserId)
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [happenedAt, setHappenedAt] = useState(toLocalInputDatetime())
@@ -54,12 +60,26 @@ export default function AddExpenseForm({
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const includedSplits = splits.filter((s) => s.included)
+  const isForeign = currency !== groupCurrency
   const totalAmount = parseFloat(amount) || 0
+  const rate = parseFloat(exchangeRate) || 1
+  const convertedTotal = isForeign && totalAmount > 0 ? convertAmount(totalAmount, rate) : null
+
+  const includedSplits = splits.filter((s) => s.included)
   const perPerson =
     includedSplits.length > 0
       ? Math.round((totalAmount / includedSplits.length) * 100) / 100
       : 0
+
+  // Auto-fetch exchange rate when currency changes
+  useEffect(() => {
+    if (currency === groupCurrency) { setExchangeRate('1'); return }
+    setFetchingRate(true)
+    getRate(currency, groupCurrency)
+      .then((r) => setExchangeRate(String(Math.round(r * 10000) / 10000)))
+      .catch(() => setExchangeRate(''))
+      .finally(() => setFetchingRate(false))
+  }, [currency, groupCurrency])
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -107,7 +127,7 @@ export default function AddExpenseForm({
       const splitTotal = splitData.reduce((sum, s) => sum + s.amount, 0)
       if (Math.abs(splitTotal - totalAmount) > 0.01) {
         setError(
-          `分帳總計 $${splitTotal.toFixed(0)} 與支出金額 $${totalAmount.toFixed(0)} 不符`
+          `分帳總計 ${getCurrencySymbol(currency)}${splitTotal.toFixed(0)} 與支出金額 ${getCurrencySymbol(currency)}${totalAmount.toFixed(0)} 不符`
         )
         return
       }
@@ -124,6 +144,8 @@ export default function AddExpenseForm({
           paidBy,
           splitType,
           category,
+          currency,
+          exchangeRate: rate,
           happenedAt: new Date(happenedAt).toISOString(),
           photoUrl,
           remark: remark.trim() || null,
@@ -138,6 +160,9 @@ export default function AddExpenseForm({
       setLoading(false)
     }
   }
+
+  const symbol = getCurrencySymbol(currency)
+  const defaultSymbol = getCurrencySymbol(groupCurrency)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
@@ -172,23 +197,63 @@ export default function AddExpenseForm({
         </select>
       </div>
 
-      {/* Amount */}
+      {/* Currency + Amount */}
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">金額</label>
-        <div className="relative">
-          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-          <Input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0"
-            className="pl-7"
-            min="0"
-            step="1"
-            required
-          />
+        <label className="block text-sm font-medium text-gray-700 mb-1">貨幣與金額</label>
+        <div className="flex gap-2">
+          <select
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:border-line-green w-28 flex-shrink-0"
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.code}</option>
+            ))}
+          </select>
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{symbol}</span>
+            <Input
+              type="number"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+              className="pl-8"
+              min="0"
+              step="any"
+              required
+            />
+          </div>
         </div>
       </div>
+
+      {/* Exchange rate (only shown for foreign currency) */}
+      {isForeign && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            匯率 <span className="text-gray-400 font-normal">(1 {currency} = ? {groupCurrency})</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Input
+                type="number"
+                value={exchangeRate}
+                onChange={(e) => setExchangeRate(e.target.value)}
+                placeholder={fetchingRate ? '取得中...' : '0'}
+                min="0"
+                step="any"
+              />
+              {fetchingRate && (
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">載入中...</span>
+              )}
+            </div>
+            {convertedTotal !== null && (
+              <span className="text-sm text-gray-500 whitespace-nowrap">
+                ≈ {defaultSymbol}{convertedTotal.toLocaleString()} {groupCurrency}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Date & time */}
       <div>
@@ -226,7 +291,7 @@ export default function AddExpenseForm({
         </select>
       </div>
 
-      {/* Splits — with inline split-type dropdown in the header */}
+      {/* Splits */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-medium text-gray-700">分帳給</label>
@@ -272,7 +337,7 @@ export default function AddExpenseForm({
 
               {splitType === 'custom' && split.included && (
                 <div className="relative w-24">
-                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                  <span className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs">{symbol}</span>
                   <input
                     type="number"
                     value={split.customAmount}
@@ -284,13 +349,13 @@ export default function AddExpenseForm({
                     placeholder="0"
                     className="w-full pl-5 pr-2 py-1.5 border border-gray-200 rounded-lg text-sm text-right focus:outline-none focus:border-line-green"
                     min="0"
-                    step="1"
+                    step="any"
                   />
                 </div>
               )}
               {splitType === 'equal' && split.included && totalAmount > 0 && (
-                <span className="text-sm text-gray-400 w-16 text-right">
-                  ${perPerson.toLocaleString()}
+                <span className="text-sm text-gray-400 w-20 text-right">
+                  {symbol}{perPerson.toLocaleString()}
                 </span>
               )}
             </div>

@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
   const userId = getUserId(req)
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const { name } = await req.json()
+  const { name, defaultCurrency } = await req.json()
   if (!name?.trim()) {
     return NextResponse.json({ error: 'name is required' }, { status: 400 })
   }
@@ -59,7 +59,12 @@ export async function POST(req: NextRequest) {
 
   const { data: group, error: gErr } = await supabase
     .from('groups')
-    .insert({ name: name.trim(), invite_code: inviteCode, created_by: userId })
+    .insert({
+      name: name.trim(),
+      invite_code: inviteCode,
+      created_by: userId,
+      default_currency: defaultCurrency ?? 'TWD',
+    })
     .select()
     .single()
 

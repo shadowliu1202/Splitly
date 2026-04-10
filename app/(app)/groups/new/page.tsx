@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUser } from '@/components/providers/UserProvider'
+import { CURRENCIES } from '@/lib/utils/currencies'
 import Header from '@/components/layout/Header'
 import Input from '@/components/ui/Input'
 import Button from '@/components/ui/Button'
@@ -11,6 +12,7 @@ export default function NewGroupPage() {
   const router = useRouter()
   const { user } = useUser()
   const [name, setName] = useState('')
+  const [defaultCurrency, setDefaultCurrency] = useState('TWD')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -32,7 +34,7 @@ export default function NewGroupPage() {
           'Content-Type': 'application/json',
           'x-user-id': user.id,
         },
-        body: JSON.stringify({ name: name.trim() }),
+        body: JSON.stringify({ name: name.trim(), defaultCurrency }),
       })
 
       if (!res.ok) throw new Error('建立失敗')
@@ -73,6 +75,21 @@ export default function NewGroupPage() {
               maxLength={50}
               autoFocus
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              預設貨幣
+            </label>
+            <select
+              value={defaultCurrency}
+              onChange={(e) => setDefaultCurrency(e.target.value)}
+              className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:border-line-green"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
           </div>
 
           <Button type="submit" loading={loading} className="w-full" size="lg">

@@ -20,6 +20,9 @@ export default function NewExpensePage() {
       return cached ? JSON.parse(cached) : []
     } catch { return [] }
   })
+  const [groupCurrency] = useState<string>(() => {
+    try { return sessionStorage.getItem(`currency_${groupId}`) ?? 'TWD' } catch { return 'TWD' }
+  })
   const [loading, setLoading] = useState(members.length === 0)
   const [tab, setTab] = useState<Tab>('expense')
 
@@ -73,6 +76,7 @@ export default function NewExpensePage() {
             groupId={groupId}
             members={members}
             currentUserId={user?.id ?? ''}
+            groupCurrency={groupCurrency}
           />
         ) : (
           <AddTransferForm

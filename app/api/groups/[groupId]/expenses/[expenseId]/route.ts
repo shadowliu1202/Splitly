@@ -64,6 +64,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (body.splitType !== undefined) updates.split_type = body.splitType
   if (body.happenedAt !== undefined) updates.happened_at = body.happenedAt
   if (body.category !== undefined) updates.category = body.category
+  if (body.currency !== undefined) updates.currency = body.currency
+  if (body.exchangeRate !== undefined) updates.exchange_rate = body.exchangeRate
   if (body.photoUrl !== undefined) updates.photo_url = body.photoUrl
   if (body.remark !== undefined) updates.remark = body.remark ?? null
 

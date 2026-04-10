@@ -8,6 +8,7 @@ import Link from 'next/link'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
 import { Group, Expense, Settlement } from '@/types'
+import { CURRENCIES } from '@/lib/utils/currencies'
 import { formatDateLabel, groupByDate } from '@/lib/utils/date'
 import ExpenseCard from '@/components/expenses/ExpenseCard'
 import TransferCard from '@/components/expenses/TransferCard'
@@ -37,6 +38,8 @@ export default function GroupDetailPage() {
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [savingName, setSavingName] = useState(false)
+  const [editingCurrency, setEditingCurrency] = useState(false)
+  const [currencyInput, setCurrencyInput] = useState('')
 
   const fetchAll = useCallback(async () => {
     if (!user) return
@@ -59,6 +62,7 @@ export default function GroupDetailPage() {
       try {
         const memberUsers = (group.group_members ?? []).map((m: { users: unknown }) => m.users).filter(Boolean)
         sessionStorage.setItem(`members_${groupId}`, JSON.stringify(memberUsers))
+        sessionStorage.setItem(`currency_${groupId}`, group.default_currency ?? 'TWD')
       } catch {}
 
     } catch (err) {
@@ -89,6 +93,25 @@ export default function GroupDetailPage() {
     } finally {
       setSavingName(false)
       setEditingName(false)
+    }
+  }
+
+  const handleCurrencyChange = async (newCurrency: string) => {
+    if (!user || newCurrency === group?.default_currency) {
+      setEditingCurrency(false)
+      return
+    }
+    try {
+      const res = await fetch(`/api/groups/${groupId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'x-user-id': user.id },
+        body: JSON.stringify({ defaultCurrency: newCurrency }),
+      })
+      if (res.ok) {
+        setGroup((prev) => prev ? { ...prev, default_currency: newCurrency } : prev)
+      }
+    } finally {
+      setEditingCurrency(false)
     }
   }
 
@@ -163,6 +186,31 @@ export default function GroupDetailPage() {
 
       {/* Members strip */}
       <div className="bg-white px-4 py-3 border-b border-gray-100 space-y-3">
+        {/* Default currency row */}
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-gray-500">預設貨幣</span>
+          {editingCurrency ? (
+            <select
+              autoFocus
+              value={currencyInput}
+              onChange={(e) => { setCurrencyInput(e.target.value); handleCurrencyChange(e.target.value) }}
+              onBlur={() => setEditingCurrency(false)}
+              className="border border-gray-200 rounded-lg px-2 py-1 text-sm text-gray-900 bg-white focus:outline-none focus:border-line-green"
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.code} value={c.code}>{c.label}</option>
+              ))}
+            </select>
+          ) : (
+            <button
+              onClick={() => { setCurrencyInput(group.default_currency ?? 'TWD'); setEditingCurrency(true) }}
+              className="flex items-center gap-1 text-gray-700 font-medium active:opacity-70"
+            >
+              {group.default_currency ?? 'TWD'}
+              <Pencil size={12} className="text-gray-400" />
+            </button>
+          )}
+        </div>
         <div className="flex items-center gap-3 overflow-x-auto">
           {realMembers.map((m) => (
             <div key={m.user_id} className="flex flex-col items-center gap-1 flex-shrink-0">
@@ -233,19 +281,20 @@ export default function GroupDetailPage() {
             ...settlements.map((s) => ({ kind: 'transfer' as const, date: s.settled_at, item: s })),
           ]
 
-          return groupByDate(items, (i) => i.date).map(([date, group]) => (
+          return groupByDate(items, (i) => i.date).map(([date, dateItems]) => (
             <div key={date}>
               <p className="text-xs font-semibold text-gray-400 mb-2 px-1">
                 {formatDateLabel(date)}
               </p>
               <div className="rounded-2xl overflow-hidden divide-y divide-gray-100">
-                {[...group].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'transfer' ? -1 : 1)).map((i) =>
+                {[...dateItems].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'transfer' ? -1 : 1)).map((i) =>
                   i.kind === 'expense' ? (
                     <ExpenseCard
                       key={i.item.id}
                       expense={i.item}
                       currentUserId={user?.id ?? ''}
                       groupId={groupId}
+                      groupCurrency={group?.default_currency ?? 'TWD'}
                     />
                   ) : (
                     <TransferCard

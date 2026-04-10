@@ -6,6 +6,7 @@ import { Camera, Check, Pencil, Trash2, X } from 'lucide-react'
 import { useUser } from '@/components/providers/UserProvider'
 import { Expense, ExpenseCategory, SplitType, User } from '@/types'
 import { EXPENSE_CATEGORIES, getCategoryMeta } from '@/lib/utils/expenseCategories'
+import { CURRENCIES, getCurrencySymbol, getRate, convertAmount } from '@/lib/utils/currencies'
 import { formatDateTime, toLocalInputDatetime } from '@/lib/utils/date'
 import Avatar from '@/components/ui/Avatar'
 import Button from '@/components/ui/Button'
@@ -43,6 +44,9 @@ export default function ExpenseDetailPage() {
   const [amount, setAmount] = useState('')
   const [paidBy, setPaidBy] = useState('')
   const [category, setCategory] = useState<ExpenseCategory>('other')
+  const [currency, setCurrency] = useState('TWD')
+  const [exchangeRate, setExchangeRate] = useState('1')
+  const [fetchingRate, setFetchingRate] = useState(false)
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [happenedAt, setHappenedAt] = useState('')
   const [remark, setRemark] = useState('')
@@ -50,6 +54,27 @@ export default function ExpenseDetailPage() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [splits, setSplits] = useState<SplitRow[]>([])
+
+  const groupCurrency = (() => {
+    try { return sessionStorage.getItem(`currency_${groupId}`) ?? 'TWD' } catch { return 'TWD' }
+  })()
+
+  const isForeign = currency !== groupCurrency
+  const rate = parseFloat(exchangeRate) || 1
+  const totalAmount = parseFloat(amount) || 0
+  const convertedTotal = isForeign && totalAmount > 0 ? convertAmount(totalAmount, rate) : null
+
+  // Auto-fetch exchange rate when currency changes in edit mode
+  useEffect(() => {
+    if (!editing) return
+    if (currency === groupCurrency) { setExchangeRate('1'); return }
+    setFetchingRate(true)
+    getRate(currency, groupCurrency)
+      .then((r) => setExchangeRate(String(Math.round(r * 10000) / 10000)))
+      .catch(() => {})
+      .finally(() => setFetchingRate(false))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currency, editing])
 
   const fetchData = useCallback(async () => {
     if (!user) return
@@ -76,6 +101,8 @@ export default function ExpenseDetailPage() {
     setAmount(String(expense.amount))
     setPaidBy(expense.paid_by)
     setCategory((expense.category as ExpenseCategory) ?? 'other')
+    setCurrency(expense.currency ?? 'TWD')
+    setExchangeRate(String(expense.exchange_rate ?? 1))
     setSplitType(expense.split_type as SplitType)
     setHappenedAt(toLocalInputDatetime(expense.happened_at))
     setRemark(expense.remark ?? '')
@@ -98,7 +125,6 @@ export default function ExpenseDetailPage() {
   }, [expense, members])
 
   const includedSplits = splits.filter((s) => s.included)
-  const totalAmount = parseFloat(amount) || 0
   const perPerson =
     includedSplits.length > 0
       ? Math.round((totalAmount / includedSplits.length) * 100) / 100
@@ -162,6 +188,8 @@ export default function ExpenseDetailPage() {
           paidBy,
           splitType,
           category,
+          currency,
+          exchangeRate: rate,
           happenedAt: new Date(happenedAt).toISOString(),
           photoUrl,
           remark: remark.trim() || null,
@@ -203,6 +231,12 @@ export default function ExpenseDetailPage() {
 
   const payerUser = expense.payer
   const cat = getCategoryMeta(expense.category)
+  const expCurrency = expense.currency ?? 'TWD'
+  const expSymbol = getCurrencySymbol(expCurrency)
+  const isExpForeign = expCurrency !== groupCurrency
+  const expConverted = isExpForeign
+    ? convertAmount(Number(expense.amount), Number(expense.exchange_rate ?? 1))
+    : null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -280,14 +314,54 @@ export default function ExpenseDetailPage() {
               </select>
             </div>
 
-            {/* Amount */}
+            {/* Currency + Amount */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">金額</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
-                <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="pl-7" min="0" step="1" />
+              <label className="block text-sm font-medium text-gray-700 mb-1">貨幣與金額</label>
+              <div className="flex gap-2">
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="border border-gray-200 rounded-xl px-3 py-2.5 text-sm text-gray-900 bg-white focus:outline-none focus:border-line-green w-28 flex-shrink-0"
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code}>{c.code}</option>
+                  ))}
+                </select>
+                <div className="relative flex-1">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">{getCurrencySymbol(currency)}</span>
+                  <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="pl-8" min="0" step="any" />
+                </div>
               </div>
             </div>
+
+            {/* Exchange rate (only for foreign currency) */}
+            {isForeign && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  匯率 <span className="text-gray-400 font-normal">(1 {currency} = ? {groupCurrency})</span>
+                </label>
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Input
+                      type="number"
+                      value={exchangeRate}
+                      onChange={(e) => setExchangeRate(e.target.value)}
+                      placeholder={fetchingRate ? '取得中...' : '0'}
+                      min="0"
+                      step="any"
+                    />
+                    {fetchingRate && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">載入中...</span>
+                    )}
+                  </div>
+                  {convertedTotal !== null && (
+                    <span className="text-sm text-gray-500 whitespace-nowrap">
+                      ≈ {getCurrencySymbol(groupCurrency)}{convertedTotal.toLocaleString()} {groupCurrency}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Date & time */}
             <div>
@@ -426,20 +500,37 @@ export default function ExpenseDetailPage() {
                   <p className="text-xs text-gray-400 mt-0.5">
                     {payerUser?.display_name ?? '未知'} 付了{' '}
                     <span className="font-semibold text-gray-700 text-sm">
-                      ${Number(expense.amount).toLocaleString()}
+                      {expSymbol}{Number(expense.amount).toLocaleString()} {expCurrency}
                     </span>
                   </p>
                 </div>
                 <div className="text-right flex-shrink-0">
                   <p className="text-2xl font-bold text-gray-900">
-                    ${Number(expense.amount).toLocaleString()}
+                    {expSymbol}{Number(expense.amount).toLocaleString()}
                   </p>
+                  {isExpForeign && expConverted !== null && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      ≈ {getCurrencySymbol(groupCurrency)}{expConverted.toLocaleString()} {groupCurrency}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="border-t border-gray-100 pt-3 flex items-center justify-between text-sm text-gray-500">
                 <span>🏷 類型</span>
                 <span className="font-medium text-gray-700">{cat.label}</span>
+              </div>
+
+              <div className="flex items-center justify-between text-sm text-gray-500">
+                <span>💱 貨幣</span>
+                <span className="font-medium text-gray-700">
+                  {expCurrency}
+                  {isExpForeign && (
+                    <span className="text-gray-400 font-normal ml-1">
+                      (1 {expCurrency} = {expense.exchange_rate} {groupCurrency})
+                    </span>
+                  )}
+                </span>
               </div>
 
               <div className="flex items-center justify-between text-sm text-gray-500">
@@ -477,7 +568,7 @@ export default function ExpenseDetailPage() {
                       <Avatar src={splitUser?.avatar_url} name={splitUser?.display_name ?? '?'} size={36} />
                       <span className="flex-1 text-sm text-gray-800">{splitUser?.display_name ?? split.user_id.slice(0, 6)}</span>
                       <span className={`text-sm font-semibold ${split.user_id === expense.paid_by ? 'text-line-green' : 'text-red-500'}`}>
-                        ${Number(split.amount).toLocaleString()}
+                        {expSymbol}{Number(split.amount).toLocaleString()}
                       </span>
                     </div>
                   )
