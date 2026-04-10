@@ -83,6 +83,7 @@ export default function NewExpensePage() {
             groupId={groupId}
             members={members}
             currentUserId={user?.id ?? ''}
+            groupCurrency={groupCurrency}
           />
         )}
       </div>

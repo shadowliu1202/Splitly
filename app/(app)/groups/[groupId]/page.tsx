@@ -302,6 +302,7 @@ export default function GroupDetailPage() {
                       settlement={i.item}
                       currentUserId={user?.id ?? ''}
                       groupId={groupId}
+                      groupCurrency={group?.default_currency ?? 'TWD'}
                     />
                   )
                 )}

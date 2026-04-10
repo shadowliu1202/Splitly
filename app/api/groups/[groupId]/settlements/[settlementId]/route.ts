@@ -58,6 +58,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (body.toUserId !== undefined) updates.to_user_id = body.toUserId
   if (body.amount !== undefined) updates.amount = body.amount
   if (body.settledAt !== undefined) updates.settled_at = body.settledAt
+  if (body.currency !== undefined) updates.currency = body.currency
+  if (body.exchangeRate !== undefined) updates.exchange_rate = body.exchangeRate
   if (body.remark !== undefined) updates.remark = body.remark ?? null
   if (body.photoUrl !== undefined) updates.photo_url = body.photoUrl ?? null
 

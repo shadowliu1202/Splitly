@@ -32,7 +32,7 @@ export async function POST(req: NextRequest, { params }: Params) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { groupId } = await params
-  const { fromUserId, toUserId, amount, settledAt, remark, photoUrl } = await req.json()
+  const { fromUserId, toUserId, amount, currency, exchangeRate, settledAt, remark, photoUrl } = await req.json()
 
   if (!fromUserId || !toUserId || !amount) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 })
@@ -52,6 +52,8 @@ export async function POST(req: NextRequest, { params }: Params) {
       from_user_id: fromUserId,
       to_user_id: toUserId,
       amount,
+      currency: currency ?? 'TWD',
+      exchange_rate: exchangeRate ?? 1,
       settled_at: settledAt ?? new Date().toISOString(),
       remark: remark ?? null,
       photo_url: photoUrl ?? null,
