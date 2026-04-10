@@ -29,6 +29,9 @@ export default function AddTransferForm({ groupId, members, currentUserId, group
   const [currency, setCurrency] = useState(groupCurrency)
   const [exchangeRate, setExchangeRate] = useState('1')
   const [fetchingRate, setFetchingRate] = useState(false)
+
+  // Sync when groupCurrency resolves from API after mount
+  useEffect(() => { setCurrency(groupCurrency) }, [groupCurrency])
   const [settledAt, setSettledAt] = useState(toLocalInputDatetime())
   const [remark, setRemark] = useState('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(null)

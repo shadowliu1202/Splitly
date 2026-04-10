@@ -14,13 +14,15 @@ type Tab = 'expense' | 'transfer'
 export default function NewExpensePage() {
   const { groupId } = useParams<{ groupId: string }>()
   const { user } = useUser()
+
   const [members, setMembers] = useState<User[]>(() => {
     try {
       const cached = sessionStorage.getItem(`members_${groupId}`)
       return cached ? JSON.parse(cached) : []
     } catch { return [] }
   })
-  const [groupCurrency] = useState<string>(() => {
+  // Initialise from sessionStorage immediately; will be updated from API below
+  const [groupCurrency, setGroupCurrency] = useState<string>(() => {
     try { return sessionStorage.getItem(`currency_${groupId}`) ?? 'TWD' } catch { return 'TWD' }
   })
   const [loading, setLoading] = useState(members.length === 0)
@@ -28,15 +30,21 @@ export default function NewExpensePage() {
 
   useEffect(() => {
     if (!user) return
+    const headers = { 'x-user-id': user.id }
 
-    fetch(`/api/groups/${groupId}/members`, {
-      headers: { 'x-user-id': user.id },
-    })
-      .then((r) => r.json())
-      .then((data) => {
-        const fresh = data.members ?? []
+    // Fetch members + group in parallel
+    Promise.all([
+      fetch(`/api/groups/${groupId}/members`, { headers }).then((r) => r.json()),
+      fetch(`/api/groups/${groupId}`, { headers }).then((r) => r.json()),
+    ])
+      .then(([membersData, groupData]) => {
+        const fresh = membersData.members ?? []
         setMembers(fresh)
         try { sessionStorage.setItem(`members_${groupId}`, JSON.stringify(fresh)) } catch {}
+
+        const currency = groupData.group?.default_currency ?? 'TWD'
+        setGroupCurrency(currency)
+        try { sessionStorage.setItem(`currency_${groupId}`, currency) } catch {}
       })
       .catch(console.error)
       .finally(() => setLoading(false))

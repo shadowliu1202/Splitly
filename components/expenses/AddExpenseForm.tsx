@@ -41,6 +41,9 @@ export default function AddExpenseForm({
   const [currency, setCurrency] = useState(groupCurrency)
   const [exchangeRate, setExchangeRate] = useState('1')
   const [fetchingRate, setFetchingRate] = useState(false)
+
+  // Sync when groupCurrency resolves from API after mount
+  useEffect(() => { setCurrency(groupCurrency) }, [groupCurrency])
   const [paidBy, setPaidBy] = useState(currentUserId)
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [happenedAt, setHappenedAt] = useState(toLocalInputDatetime())
