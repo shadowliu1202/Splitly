@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { useUser } from '@/components/providers/UserProvider'
 import { useLiff } from '@/components/providers/LiffProvider'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
@@ -7,34 +9,22 @@ import LoadingSpinner from '@/components/ui/LoadingSpinner'
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const { isReady, isLoggedIn } = useLiff()
   const { user, isLoading, error } = useUser()
+  const router = useRouter()
 
-  // LIFF initialising
-  if (!isReady) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-3">
-          <LoadingSpinner size={36} />
-          <p className="text-sm text-gray-400">載入中...</p>
-        </div>
-      </div>
-    )
+  // If LIFF is ready, not logged in, and no cached user → send to login page
+  useEffect(() => {
+    if (isReady && !isLoggedIn && !isLoading && !user) {
+      router.replace('/')
+    }
+  }, [isReady, isLoggedIn, isLoading, user, router])
+
+  // Already have a user (from sessionStorage / Google / LINE / superPreviewer)
+  if (user) {
+    return <div className="min-h-screen bg-gray-50">{children}</div>
   }
 
-  // Not logged in to LINE
-  if (!isLoggedIn) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-6">
-        <div className="text-center space-y-3">
-          <p className="text-4xl">🔐</p>
-          <p className="text-lg font-semibold">請在 LINE 中開啟此應用程式</p>
-          <p className="text-sm text-gray-400">Splitly 需要透過 LINE 登入才能使用</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Syncing user to DB
-  if (isLoading) {
+  // Still loading / waiting for LIFF
+  if (isLoading || !isReady) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size={32} />
@@ -42,26 +32,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     )
   }
 
-  // Auth error or user failed to sync
-  if (error || (!isLoading && !user)) {
+  // Auth error
+  if (error) {
     return (
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="text-center space-y-3">
           <p className="text-4xl">⚠️</p>
           <p className="text-lg font-semibold">登入發生錯誤</p>
-          <p className="text-sm text-gray-400">
-            {error?.message ?? '無法驗證 LINE 身份，請重新開啟'}
-          </p>
+          <p className="text-sm text-gray-400">{error.message ?? '無法驗證身份，請重新登入'}</p>
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => router.replace('/')}
             className="mt-2 px-4 py-2 rounded-xl bg-line-green text-white text-sm font-medium active:opacity-80"
           >
-            重新整理
+            回到登入頁
           </button>
         </div>
       </div>
     )
   }
 
-  return <div className="min-h-screen bg-gray-50">{children}</div>
+  // Waiting for redirect effect to fire
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <LoadingSpinner size={32} />
+    </div>
+  )
 }

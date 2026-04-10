@@ -25,46 +25,68 @@ const UserContext = createContext<UserContextType>({
 })
 
 const USER_CACHE_KEY = 'splitly_user'
+const SUPER_PREVIEWER_ID = 'superPreviewer'
 
-function getCachedUser(lineUserId: string): User | null {
+function getSessionUser(): User | null {
   try {
     const raw = sessionStorage.getItem(USER_CACHE_KEY)
     if (!raw) return null
-    const cached = JSON.parse(raw)
-    if (cached?.line_user_id === lineUserId) return cached as User
-  } catch {}
-  return null
+    return JSON.parse(raw) as User
+  } catch { return null }
 }
 
 function setCachedUser(user: User) {
-  try {
-    sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(user))
-  } catch {}
+  try { sessionStorage.setItem(USER_CACHE_KEY, JSON.stringify(user)) } catch {}
 }
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const { isReady, isLoggedIn, profile, accessToken } = useLiff()
-  const [user, setUser] = useState<User | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+
+  // Initialise synchronously from sessionStorage to avoid flash
+  const [user, setUser] = useState<User | null>(() => getSessionUser())
+  const [isLoading, setIsLoading] = useState(() => {
+    const cached = getSessionUser()
+    // superPreviewer and any cached user start as not-loading
+    return !cached
+  })
   const [error, setError] = useState<Error | null>(null)
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
+    // superPreviewer: bypass all auth, use cached object as-is
+    const cached = getSessionUser()
+    if (cached?.id === SUPER_PREVIEWER_ID) {
+      setUser(cached)
+      setIsLoading(false)
+      return
+    }
+
+    // Google / non-LINE user: already in sessionStorage, LIFF won't log them in
+    // Once LIFF is ready and confirms not logged in, stop loading
+    if (cached?.id && isReady && !isLoggedIn) {
+      setUser(cached)
+      setIsLoading(false)
+      return
+    }
+
+    // LIFF not ready yet
     if (!isReady) return
+
+    // LIFF ready but not logged in and no cache → redirect handled by layout
     if (!isLoggedIn || !profile) {
       setIsLoading(false)
       return
     }
 
-    // Use cached user immediately to avoid loading flash
-    const cached = getCachedUser(profile.userId)
-    if (cached) {
-      setUser(cached)
+    // LIFF logged in — use cache for instant display, then sync with server
+    const cachedLine = cached?.line_user_id === profile.userId ? cached : null
+    if (cachedLine) {
+      setUser(cachedLine)
       setIsLoading(false)
     }
 
     const syncUser = async () => {
-      if (!cached) setIsLoading(true)
+      if (!cachedLine) setIsLoading(true)
       try {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 15000)
@@ -82,15 +104,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
           }),
         })
         clearTimeout(timeoutId)
-
         if (!res.ok) throw new Error('登入失敗')
-
         const data = await res.json()
         setCachedUser(data.user)
         setUser(data.user)
       } catch (err) {
-        if (!cached) {
-          console.error('[UserProvider] sync error:', err)
+        if (!cachedLine) {
           setError(err instanceof Error ? err : new Error('登入失敗'))
         }
       } finally {
@@ -102,9 +121,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [isReady, isLoggedIn, profile, accessToken, tick])
 
   return (
-    <UserContext.Provider
-      value={{ user, isLoading, error, refresh: () => setTick((t) => t + 1) }}
-    >
+    <UserContext.Provider value={{ user, isLoading, error, refresh: () => setTick((t) => t + 1) }}>
       {children}
     </UserContext.Provider>
   )
