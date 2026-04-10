@@ -567,7 +567,7 @@ export default function ExpenseDetailPage() {
                     >
                       <Avatar src={splitUser?.avatar_url} name={splitUser?.display_name ?? '?'} size={36} />
                       <span className="flex-1 text-sm text-gray-800">{splitUser?.display_name ?? split.user_id.slice(0, 6)}</span>
-                      <span className="text-sm font-semibold text-gray-900">
+                      <span className={`text-sm font-semibold ${split.user_id === expense.paid_by ? 'text-gray-400' : 'text-gray-900'}`}>
                         {expSymbol}{Number(split.amount).toLocaleString()}
                       </span>
                     </div>
