@@ -500,7 +500,7 @@ export default function ExpenseDetailPage() {
                   <p className="text-xs text-gray-400 mt-0.5">
                     {payerUser?.display_name ?? '未知'} 付了{' '}
                     <span className="font-semibold text-gray-700 text-sm">
-                      {expSymbol}{Number(expense.amount).toLocaleString()} {expCurrency}
+                      {expSymbol}{Number(expense.amount).toLocaleString()}
                     </span>
                   </p>
                 </div>
