@@ -19,6 +19,7 @@ export interface Group {
   created_by: string | null
   created_at: string
   default_currency: string
+  line_group_id: string | null
   // joined via query
   group_members?: GroupMember[]
   member_count?: number
@@ -123,4 +124,5 @@ export interface UpdateExpensePayload {
 export interface CreateGroupPayload {
   name: string
   defaultCurrency?: string
+  lineGroupId?: string | null
 }

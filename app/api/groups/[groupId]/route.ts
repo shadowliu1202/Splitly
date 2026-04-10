@@ -28,10 +28,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { groupId } = await params
-  const { name, defaultCurrency } = await req.json()
+  const { name, defaultCurrency, lineGroupId } = await req.json()
 
-  if (!name?.trim() && !defaultCurrency) {
-    return NextResponse.json({ error: 'name or defaultCurrency is required' }, { status: 400 })
+  if (!name?.trim() && !defaultCurrency && lineGroupId === undefined) {
+    return NextResponse.json({ error: 'nothing to update' }, { status: 400 })
   }
 
   const supabase = adminClient()
@@ -48,9 +48,10 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const updates: Record<string, string> = {}
+  const updates: Record<string, string | null> = {}
   if (name?.trim()) updates.name = name.trim()
   if (defaultCurrency) updates.default_currency = defaultCurrency
+  if (lineGroupId !== undefined) updates.line_group_id = lineGroupId ?? null
 
   const { data: group, error } = await supabase
     .from('groups')

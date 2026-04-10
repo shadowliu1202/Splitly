@@ -15,9 +15,10 @@ interface Props {
   members: User[]
   currentUserId: string
   groupCurrency?: string
+  groupHasLineLink?: boolean
 }
 
-export default function AddTransferForm({ groupId, members, currentUserId, groupCurrency = 'TWD' }: Props) {
+export default function AddTransferForm({ groupId, members, currentUserId, groupCurrency = 'TWD', groupHasLineLink = false }: Props) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -39,6 +40,7 @@ export default function AddTransferForm({ groupId, members, currentUserId, group
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [notifyLine, setNotifyLine] = useState(true)
 
   const isForeign = currency !== groupCurrency
   const parsed = parseFloat(amount) || 0
@@ -104,6 +106,9 @@ export default function AddTransferForm({ groupId, members, currentUserId, group
           settledAt: new Date(settledAt).toISOString(),
           remark: remark.trim() || null,
           photoUrl,
+          notify: groupHasLineLink && notifyLine,
+          fromName: members.find((m) => m.id === fromUserId)?.display_name ?? '未知',
+          toName: members.find((m) => m.id === toUserId)?.display_name ?? '未知',
         }),
       })
       if (!res.ok) throw new Error('新增失敗')
@@ -288,6 +293,19 @@ export default function AddTransferForm({ groupId, members, currentUserId, group
           <span className="text-sm text-gray-500">給</span>
           <Avatar src={toUser.avatar_url} name={toUser.display_name} size={32} />
         </div>
+      )}
+
+      {/* LINE notify checkbox */}
+      {groupHasLineLink && (
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={notifyLine}
+            onChange={(e) => setNotifyLine(e.target.checked)}
+            className="accent-line-green w-4 h-4"
+          />
+          <span className="text-sm text-gray-700">發送通知到 LINE 群組</span>
+        </label>
       )}
 
       <Button type="submit" loading={loading} className="w-full" size="lg">

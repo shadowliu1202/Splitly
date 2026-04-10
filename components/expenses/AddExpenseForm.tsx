@@ -24,6 +24,7 @@ interface Props {
   members: User[]
   currentUserId: string
   groupCurrency?: string
+  groupHasLineLink?: boolean
 }
 
 export default function AddExpenseForm({
@@ -31,6 +32,7 @@ export default function AddExpenseForm({
   members,
   currentUserId,
   groupCurrency = 'TWD',
+  groupHasLineLink = false,
 }: Props) {
   const router = useRouter()
   const fileRef = useRef<HTMLInputElement>(null)
@@ -62,6 +64,7 @@ export default function AddExpenseForm({
   )
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [notifyLine, setNotifyLine] = useState(true)
 
   const isForeign = currency !== groupCurrency
   const totalAmount = parseFloat(amount) || 0
@@ -153,6 +156,8 @@ export default function AddExpenseForm({
           photoUrl,
           remark: remark.trim() || null,
           splits: splitData,
+          notify: groupHasLineLink && notifyLine,
+          payerName: members.find((m) => m.id === paidBy)?.display_name ?? '未知',
         }),
       })
       if (!res.ok) throw new Error('新增失敗')
@@ -407,6 +412,19 @@ export default function AddExpenseForm({
           </button>
         )}
       </div>
+
+      {/* LINE notify checkbox */}
+      {groupHasLineLink && (
+        <label className="flex items-center gap-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={notifyLine}
+            onChange={(e) => setNotifyLine(e.target.checked)}
+            className="accent-line-green w-4 h-4"
+          />
+          <span className="text-sm text-gray-700">發送通知到 LINE 群組</span>
+        </label>
+      )}
 
       <Button type="submit" loading={loading} className="w-full" size="lg">
         新增支出
