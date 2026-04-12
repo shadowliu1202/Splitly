@@ -1,14 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { Suspense, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import LoadingSpinner from '@/components/ui/LoadingSpinner'
 
-/**
- * After Google OAuth, the server redirects here with ?u=<base64 user JSON>.
- * We store it in sessionStorage and redirect to the app.
- */
-export default function AuthCallbackPage() {
+function CallbackHandler() {
   const router = useRouter()
   const params = useSearchParams()
 
@@ -38,5 +34,17 @@ export default function AuthCallbackPage() {
         <p className="text-sm text-gray-400">登入中...</p>
       </div>
     </div>
+  )
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <LoadingSpinner size={36} />
+      </div>
+    }>
+      <CallbackHandler />
+    </Suspense>
   )
 }
