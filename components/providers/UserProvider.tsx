@@ -25,7 +25,7 @@ const UserContext = createContext<UserContextType>({
 })
 
 const USER_CACHE_KEY = 'splitly_user'
-const SUPER_PREVIEWER_ID = 'superPreviewer'
+const SUPER_PREVIEWER_LINE_ID = 'superPreviewer'
 
 function getSessionUser(): User | null {
   try {
@@ -46,8 +46,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => getSessionUser())
   const [isLoading, setIsLoading] = useState(() => {
     const cached = getSessionUser()
-    // superPreviewer and any cached user start as not-loading
-    return !cached
+    return !cached  // any cached user (incl. superPreviewer) starts as not-loading
   })
   const [error, setError] = useState<Error | null>(null)
   const [tick, setTick] = useState(0)
@@ -55,7 +54,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // superPreviewer: bypass all auth, use cached object as-is
     const cached = getSessionUser()
-    if (cached?.id === SUPER_PREVIEWER_ID) {
+    if (cached?.line_user_id === SUPER_PREVIEWER_LINE_ID) {
       setUser(cached)
       setIsLoading(false)
       return
