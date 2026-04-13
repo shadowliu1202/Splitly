@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Plus, Share2, UserPlus, Pencil, Check, X, Scale, BarChart2 } from 'lucide-react'
 import { useScrollDirection } from '@/lib/hooks/useScrollDirection'
@@ -38,6 +38,8 @@ export default function GroupDetailPage() {
   const [savingName, setSavingName] = useState(false)
   const [editingCurrency, setEditingCurrency] = useState(false)
   const [currencyInput, setCurrencyInput] = useState('')
+  const [visibleCount, setVisibleCount] = useState(6)
+  const sentinelRef = useRef<HTMLDivElement>(null)
 
   const fetchAll = useCallback(async () => {
     if (!user) return
@@ -71,6 +73,32 @@ export default function GroupDetailPage() {
   }, [groupId, user])
 
   useEffect(() => { fetchAll() }, [fetchAll])
+
+  // Reset visible count when group changes
+  useEffect(() => { setVisibleCount(6) }, [groupId])
+
+  // Combined + sorted activity list
+  type Item = { kind: 'expense'; date: string; item: Expense } | { kind: 'transfer'; date: string; item: Settlement }
+  const allItems = useMemo<Item[]>(() => [
+    ...expenses.map((e) => ({ kind: 'expense' as const, date: e.happened_at, item: e })),
+    ...settlements.map((s) => ({ kind: 'transfer' as const, date: s.settled_at, item: s })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()), [expenses, settlements])
+
+  const hasMore = visibleCount < allItems.length
+  const visibleItems = allItems.slice(0, visibleCount)
+
+  // Infinite scroll — load 6 more when sentinel enters viewport
+  useEffect(() => {
+    const el = sentinelRef.current
+    if (!el) return
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && hasMore) {
+        setVisibleCount((prev) => prev + 6)
+      }
+    }, { threshold: 0.1 })
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [hasMore])
 
   const handleRename = async () => {
     if (!user || !nameInput.trim() || nameInput.trim() === group?.name) {
@@ -277,51 +305,49 @@ export default function GroupDetailPage() {
         </div>
 
         {/* Activity list — expenses + transfers grouped by date */}
-        {expenses.length === 0 && settlements.length === 0 ? (
+        {allItems.length === 0 ? (
           <div className="text-center py-16 space-y-2 text-gray-400">
             <p className="text-4xl">🧾</p>
             <p>還沒有支出記錄</p>
             <p className="text-sm">點擊右下角新增支出</p>
           </div>
-        ) : (() => {
-          type Item =
-            | { kind: 'expense'; date: string; item: Expense }
-            | { kind: 'transfer'; date: string; item: Settlement }
-
-          const items: Item[] = [
-            ...expenses.map((e) => ({ kind: 'expense' as const, date: e.happened_at, item: e })),
-            ...settlements.map((s) => ({ kind: 'transfer' as const, date: s.settled_at, item: s })),
-          ]
-
-          return groupByDate(items, (i) => i.date).map(([date, dateItems]) => (
-            <div key={date}>
-              <p className="text-xs font-semibold text-gray-400 mb-2 px-1">
-                {formatDateLabel(date)}
-              </p>
-              <div className="rounded-2xl overflow-hidden divide-y divide-gray-100">
-                {[...dateItems].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'transfer' ? -1 : 1)).map((i) =>
-                  i.kind === 'expense' ? (
-                    <ExpenseCard
-                      key={i.item.id}
-                      expense={i.item}
-                      currentUserId={user?.id ?? ''}
-                      groupId={groupId}
-                      groupCurrency={group?.default_currency ?? 'TWD'}
-                    />
-                  ) : (
-                    <TransferCard
-                      key={i.item.id}
-                      settlement={i.item}
-                      currentUserId={user?.id ?? ''}
-                      groupId={groupId}
-                      groupCurrency={group?.default_currency ?? 'TWD'}
-                    />
-                  )
-                )}
+        ) : (
+          <>
+            {groupByDate(visibleItems, (i) => i.date).map(([date, dateItems]) => (
+              <div key={date}>
+                <p className="text-xs font-semibold text-gray-400 mb-2 px-1">
+                  {formatDateLabel(date)}
+                </p>
+                <div className="rounded-2xl overflow-hidden divide-y divide-gray-100">
+                  {[...dateItems].sort((a, b) => (a.kind === b.kind ? 0 : a.kind === 'transfer' ? -1 : 1)).map((i) =>
+                    i.kind === 'expense' ? (
+                      <ExpenseCard
+                        key={i.item.id}
+                        expense={i.item}
+                        currentUserId={user?.id ?? ''}
+                        groupId={groupId}
+                        groupCurrency={group?.default_currency ?? 'TWD'}
+                      />
+                    ) : (
+                      <TransferCard
+                        key={i.item.id}
+                        settlement={i.item}
+                        currentUserId={user?.id ?? ''}
+                        groupId={groupId}
+                        groupCurrency={group?.default_currency ?? 'TWD'}
+                      />
+                    )
+                  )}
+                </div>
               </div>
+            ))}
+
+            {/* Sentinel + load-more indicator */}
+            <div ref={sentinelRef} className="py-2 flex justify-center">
+              {hasMore && <LoadingSpinner size={20} />}
             </div>
-          ))
-        })()}
+          </>
+        )}
       </div>
 
       {/* FAB */}
