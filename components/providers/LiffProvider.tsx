@@ -55,7 +55,7 @@ export function LiffProvider({ children }: { children: ReactNode }) {
         const isLineBrowser = /Line\//i.test(navigator.userAgent)
         const initPromise = liffInstance.init({
           liffId: process.env.NEXT_PUBLIC_LIFF_ID!,
-          withLoginOnExternalBrowser: true,
+          withLoginOnExternalBrowser: false, // let our login page handle the flow
         })
 
         if (isLineBrowser) {
